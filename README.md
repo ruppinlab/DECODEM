@@ -5,8 +5,6 @@ The tumor microenvironment (TME) is a complex ecosystem consisting of diverse ce
 ![DECODEM](./figures/Fig1_DECODEM_v2.png)
 
 <br></br>
-**Contact**: 
-<br>
+**Contact**:  
 Saugato Rahman Dhruba (saugatorahman.dhruba@nih.gov)  
-Cancer Data Science Lab, NCI, NIH
-</br>
+Cancer Data Science Lab, NCI, NIH  
