@@ -1,4 +1,4 @@
-# DECODEM / DECODEMi: Systematic assessment of the roles of diverse cell types in TME in clinical phenotypes from bulk transcriptome  
+# DECODEM / DECODEMi: Systematic assessment of the roles of diverse cell types in TME in clinical response from bulk transcriptome  
 
 <i>**The relevant manuscript is currently under review:   
 S. R. Dhruba, S. Sahni, B. Wang, D. Wu, Y. Schmidt, E. Shulman, S. Sinha, S. Sammut, C. Caldas, K. Wang, E. Ruppin. <b>"Predicting breast cancer patient response to neoadjuvant chemotherapy from the deconvolved tumor microenvironment transcriptome"</b>, 2023.  
