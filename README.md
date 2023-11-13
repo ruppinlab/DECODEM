@@ -55,31 +55,31 @@ glue >= 1.6
 
 
 ## Reproducing the results
-All the main results presented in the above manuscript can be reproduced by using the codes in [analysis/machine_learning](analysis/machine_learning/). 
+All the main results presented in the above manuscript can be reproduced by using the codes in [analysis/machine_learning](analysis/machine_learning/). This assumes that the bulk expression data is already deconvolved and inside [data/](data/). Deconvolution with CODEFACS can be performed by using the scripts in [analysis/deconvolution/](analysis/deconvolution/).  
 
-#### DECODEM  
-- To perform the cross-validation analysis using the TransNEO cohort, use the script `model_transneo_cv_v1.py`  
-- To train the cell-type-specific / multi-cell-ensemble predictors using TransNEO and validate on the ARTemis + PBCP cohort, use the script `predict_sammut_validation_v2.py`  
-- To train the cell-type-specific / multi-cell-ensemble predictors using TransNEO and validate on the BrighTNess cohort, use the script `predict_brightness_validation_v2.py`  
-- To train the cell-type-specific predictors using TransNEO and validate on the Zhang et al. single-cell cohort, use the script `predict_tnbc_sc_validation_v2.py`  
-- To train the cell-type-specific predictors using TransNEO and stratify survival on the TCGA-BRCA cohort, use the script `stratify_tcga_validation_v3.py` 
+### DECODEM  
+- To perform the cross-validation analysis using the TransNEO cohort, use the script: `model_transneo_cv_v1.py`  
+- To train the cell-type-specific / multi-cell-ensemble predictors using TransNEO and validate on the ARTemis + PBCP cohort, use the script: `predict_sammut_validation_v2.py`  
+- To train the cell-type-specific / multi-cell-ensemble predictors using TransNEO and validate on the BrighTNess cohort, use the script: `predict_brightness_validation_v2.py`  
+- To train the cell-type-specific predictors using TransNEO and validate on the Zhang et al. single-cell cohort, use the script: `predict_tnbc_sc_validation_v2.py`  
+- To train the cell-type-specific predictors using TransNEO and stratify survival on the TCGA-BRCA cohort, use the script: `stratify_tcga_validation_v3.py` 
 
 
 #### DECODEMi  
-- To perform the cross-validation analysis using the TransNEO cohort and extract the top predictive CCIs, use the script `model_transneo_lirics_cv_v3.py`  
-- To train the CCI-based predictors using TransNEO and validate on the ARTemis + PBCP cohort, use the script `predict_sammut_lirics_validation_v2.py`  
-- To train the CCI-based predictors using TransNEO and validate on the BrighTNess cohort, use the script `predict_brightness_lirics_validation_v2.py`  
-- To computationally validate the top CCIs for prediction in TNBC that were extracted from DECODEMi using the single-cell pseudopatient cohort generated from the Zhang et al. SC-TNBC cohort (generates Figs. S4E-F),  use the script `predict_sc_validation_cci_pseudopatients_v1.R`  
+- To perform the cross-validation analysis using the TransNEO cohort and extract the top predictive CCIs, use the script: `model_transneo_lirics_cv_v3.py`  
+- To train the CCI-based predictors using TransNEO and validate on the ARTemis + PBCP cohort, use the script: `predict_sammut_lirics_validation_v2.py`  
+- To train the CCI-based predictors using TransNEO and validate on the BrighTNess cohort, use the script: `predict_brightness_lirics_validation_v2.py`  
+- To computationally validate the top CCIs for prediction in TNBC that were extracted from DECODEMi using the single-cell pseudopatient cohort generated from the Zhang et al. SC-TNBC cohort (generates Figs. S4E-F),  use the script: `predict_sc_validation_cci_pseudopatients_v1.R`  
 
 
-#### Enrichment & other analyses  
+### Enrichment & other analyses  
 The enrichment analyses results and all the figures/panels in the manuscript can be reproduced using the codes in [analysis/enrichment_and_figures/](analysis/enrichment_and_figures/).  
-- To perform the cell-type-specific GSEA analysis (generates Fig. 3E), use the script `run_enrichment_top_cell_types_v3.R`
-- To perform the GSVA analysis for CD4+ / CD8+ T-cells and estimate their predictive power (generates Fig. S3A-D), use the script `enrichment_cd4_cd8_tcells_v2.R`   
-- To perform the association analysis between cell-type-abundance and chemotherapy response (generates Fig. S3E-G), use the script `get_abundance_response_corr_v2.py`  
+- To perform the cell-type-specific GSEA analysis (generates Fig. 3E), use the script: `run_enrichment_top_cell_types_v3.R`
+- To perform the GSVA analysis for CD4+ / CD8+ T-cells and estimate their predictive power (generates Fig. S3A-D), use the script: `enrichment_cd4_cd8_tcells_v2.R`   
+- To perform the association analysis between cell-type-abundance and chemotherapy response (generates Fig. S3E-G), use the script: `get_abundance_response_corr_v2.py`  
 
 
-#### Reproducing the figures  
+### Reproducing the figures  
 To reproduce the figures, use the following scripts in [analysis/enrichment_and_figures/](analysis/enrichment_and_figures/):  
 - Figs. 2, 3A-D, S1-2: `generate_plots_ctp_v2.py`  
 - Figs. 4, S4A-D: `generate_plots_cci_v2.py`  
