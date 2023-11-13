@@ -1,4 +1,5 @@
-# DECODEM / DECODEMi: Systematic assessment of the diverse cell types in tumor microenvironment in clinical phenotypes from bulk transcriptome  
+# DECODEM / DECODEMi: 
+## Systematic assessment of the diverse cell types in tumor microenvironment in clinical phenotypes from bulk transcriptome  
 
 We developed a novel computational framework called **DECODEM** (<ins>DE</ins>coupling <ins>C</ins>ell-type-specific <ins>O</ins>utcomes using <ins>DE</ins>convolution and <ins>M</ins>achine learning) that can systematically assess the roles of the diverse cell types in the tumor microenvironment (TME) in a given phenotype from bulk transcriptomics. In this work, we investigate the association of the diverse cell types in breast cancer TME (BC-TME) to patient response to neoadjuvant chemotherapy (R vs. NR). The framework is divided into two steps:  
 
