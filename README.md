@@ -22,17 +22,18 @@ Authors: Saugato Rahman Dhruba, Sahil Sahni, Binbin Wang, Di Wu, Yael Schmidt, E
 
 ## Dependencies  
 For python scripts:  
-      python >= 3.8  
-      numpy >= 1.23   
-      pandas >= 1.4  
-      scikit-learn >= 1.0.2  
-      xgboost 1.6.1
-      pickle >= 3.0  
-      matplotlib >= 3.7
-      seaborn >= 0.12
-      tqdm >= 4.63  
-      lifelines >= 0.27  
-
+```
+python >= 3.8  
+numpy >= 1.23   
+pandas >= 1.4  
+scikit-learn >= 1.0.2  
+xgboost 1.6.1
+pickle >= 3.0  
+matplotlib >= 3.7
+seaborn >= 0.12
+tqdm >= 4.63  
+lifelines >= 0.27  
+```
   
   
 For R scripts:  
