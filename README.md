@@ -55,7 +55,7 @@ glue >= 1.6
 
 
 ## Reproducing the results
-All the main results presented in the above manuscript can be reproduced by using the codes in [analysis/machine_learning](analysis/machine_learning/). This assumes that the bulk expression data has already been deconvolved and put inside [data](data/), which can be achieved by using the scripts in [analysis/deconvolution/](analysis/deconvolution).  
+All the main results presented in the above manuscript can be reproduced by using the codes in [analysis/machine_learning](analysis/machine_learning/). This assumes that the bulk expression data has already been deconvolved and put inside [data](data/), which can be achieved by using the scripts in [analysis/deconvolution](analysis/deconvolution/).  
 
 ### DECODEM  
 - To perform the cross-validation analysis using the TransNEO cohort, use the script: `model_transneo_cv_v1.py`  
