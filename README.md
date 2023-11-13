@@ -9,7 +9,7 @@ The output of the framework is the cell-type-specific predictive powers (in term
 
 Furthermore, we investigate the interactions between different cell types in two ways:  
 * <b>Multi-cell-ensemble</b>: we incorporate the top predictive cell types to boost the predictive power even further which yielded the best performance for an ensemble of immune and stromal cells across two independent cohorts.  
-* <b>DECODEM<ins>i</ins></b>: we extended DECODEM to **DECODEMi** ('i' stands for interaction) where we use the inferred cell-cell interactions (CCIs) to identify the interactions that influence chemotherapy response.  
+* <b>DECODEMi</b>: we extended DECODEM to **DECODEMi** ('i' stands for interaction) where we use the inferred cell-cell interactions (CCIs) to identify the cellular communications that influence chemotherapy response.  
 
 Our findings in breast cancer highlight the considerable predictive powers of the immune and stromal cells in the TME as well as denote key CCIs that are strongly predictive of chemotherapy response.  
 
