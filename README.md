@@ -77,7 +77,9 @@ The enrichment analyses results and all the figures/panels in the manuscript can
 - To perform the cell-type-specific GSEA analysis (generates Fig. 3E), use the script `run_enrichment_top_cell_types_v3.R`
 - To perform the GSVA analysis for CD4+ / CD8+ T-cells and estimate their predictive power (generates Fig. S3A-D), use the script `enrichment_cd4_cd8_tcells_v2.R`   
 - To perform the association analysis between cell-type-abundance and chemotherapy response (generates Fig. S3E-G), use the script `get_abundance_response_corr_v2.py`  
- 
+
+
+<b>Reproducing the figures</b>  
 To reproduce the figures, use the following scripts:  
 - Figs. 2, 3A-D, S1-2: `generate_plots_ctp_v2.py`  
 - Figs. 4, S4A-D: `generate_plots_cci_v2.py`  
