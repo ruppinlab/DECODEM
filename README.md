@@ -23,34 +23,34 @@ Authors: Saugato Rahman Dhruba, Sahil Sahni, Binbin Wang, Di Wu, Yael Schmidt, E
 ## Dependencies  
 For python scripts:  
 <ul>
-python >= 3.8  
-numpy >= 1.23   
-pandas >= 1.4  
-scikit-learn >= 1.0.2  
-xgboost 1.6.1
-pickle >= 3.0  
-matplotlib >= 3.7
-seaborn >= 0.12
-tqdm >= 4.63  
-lifelines >= 0.27  
+<br>python >= 3.8</br>
+<br>numpy >= 1.23</br>   
+<br>pandas >= 1.4</br>  
+<br>scikit-learn >= 1.0.2</br>  
+<br>xgboost 1.6.1</br>
+<br>pickle >= 3.0</br>  
+<br>matplotlib >= 3.7</br>
+<br>seaborn >= 0.12</br>
+<br>tqdm >= 4.63</br>  
+<br>lifelines >= 0.27</br>  
 </ul>
   
   
 For R scripts:  
 <ul>
-R >= 3.6  
-tidyverse >= 1.3  
-plyr >= 1.8
-rtracklayer >= 1.57  
-GenomicFeatures >= 1.50
-clusterProfiler >= 4.6  
-biomaRt >= 2.54  
-msigdbr >= 7.5  
-GSVA >= 1.45  
-PRROC >= 1.3  
-rstatix >= 0.7  
-ggpubr >= 0.6  
-glue >= 1.6  
+<br>R >= 3.6</br>  
+<br>tidyverse >= 1.3</br>  
+<br>plyr >= 1.8</br>
+<br>rtracklayer >= 1.57</br>  
+<br>GenomicFeatures >= 1.50</br>
+<br>clusterProfiler >= 4.6</br>  
+<br>biomaRt >= 2.54</br>  
+<br>msigdbr >= 7.5</br>  
+<br>GSVA >= 1.45</br>  
+<br>PRROC >= 1.3</br>  
+<br>rstatix >= 0.7</br>  
+<br>ggpubr >= 0.6</br>  
+<br>glue >= 1.6</br>  
 </ul>
 
 
