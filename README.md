@@ -21,6 +21,5 @@ Authors: Saugato Rahman Dhruba, Sahil Sahni, Binbin Wang, Di Wu, Yael Schmidt, E
 *Figure: The full analysis pipeline for DECODEM and DECODEMi*
   
 <br></br>
-**Contact**:  
-Saugato Rahman Dhruba (saugatorahman.dhruba@nih.gov)  
+<b>Contact</b>: Saugato Rahman Dhruba (saugatorahman.dhruba@nih.gov)  
 Cancer Data Science Lab, CCR, NCI, NIH  
