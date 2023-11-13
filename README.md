@@ -58,5 +58,5 @@ glue >= 1.6
   
 <br></br>
 #### Contact
-Saugato Rahman Dhruba (saugatorahman.dhruba@nih.gov)  
+**Saugato Rahman Dhruba (saugatorahman.dhruba@nih.gov)**  
 Cancer Data Science Lab, National Cancer Institute, National Institutes of Health  
