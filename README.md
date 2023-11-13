@@ -20,6 +20,40 @@ Our findings in breast cancer highlight the considerable predictive powers of th
 Authors: Saugato Rahman Dhruba, Sahil Sahni, Binbin Wang, Di Wu, Yael Schmidt, Eldad D. Shulman, Sanju Sinha, Stephen-John Sammut, Carlos Caldas, Kun Wang, Eytan Ruppin  
 
 
+## Dependencies  
+For python scripts:  
+<ul>
+python >= 3.8  
+numpy >= 1.23   
+pandas >= 1.4  
+scikit-learn >= 1.0.2  
+xgboost 1.6.1
+pickle >= 3.0  
+matplotlib >= 3.7
+seaborn >= 0.12
+tqdm >= 4.63  
+lifelines >= 0.27  
+</ul>
+  
+  
+For R scripts:  
+<ul>
+R >= 3.6  
+tidyverse >= 1.3  
+plyr >= 1.8
+rtracklayer >= 1.57  
+GenomicFeatures >= 1.50
+clusterProfiler >= 4.6  
+biomaRt >= 2.54  
+msigdbr >= 7.5  
+GSVA >= 1.45  
+PRROC >= 1.3  
+rstatix >= 0.7  
+ggpubr >= 0.6  
+glue >= 1.6  
+</ul>
+
+
   
 <br></br><ul>
 <b>Contact</b>: Saugato Rahman Dhruba (saugatorahman.dhruba@nih.gov)  
