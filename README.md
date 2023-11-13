@@ -22,7 +22,7 @@ Our findings in breast cancer highlight the considerable predictive powers of th
 
 <br></br>
 ## Dependencies  
-For python scripts:  
+For `python` scripts:  
 ```
 python >= 3.8  
 numpy >= 1.23   
@@ -37,7 +37,7 @@ lifelines >= 0.27
 ```
   
   
-For R scripts:  
+For `R` scripts:  
 ```
 R >= 3.6  
 tidyverse >= 1.3  
