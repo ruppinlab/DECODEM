@@ -10,7 +10,6 @@ The output of the framework is the cell-type-specific predictive powers (in term
 ![DECODEM](./figures/Fig1_DECODEM_v2.png)  
 *Figure: The full analysis pipeline for DECODEM and DECODEMi*
 
-<br></br>
 Furthermore, we investigate the interactions between different cell types in two ways:  
 * <b><i>Multi-cell-ensemble</i></b>: we incorporate the expression profiles of the top predictive cell types to boost the predictive power even further, yielding the best performance for an ensemble of immune and stromal cell types across two independent cohorts.  
 * <b><i>DECODEMi</i></b>: we extended DECODEM to **DECODEMi** ('i' stands for interaction) where we use the inferred cell-cell interactions (CCIs) to identify the cellular communications that influence chemotherapy response.  
