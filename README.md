@@ -24,5 +24,5 @@ Authors: Saugato Rahman Dhruba, Sahil Sahni, Binbin Wang, Di Wu, Yael Schmidt, E
   
 <br></br><ul>
 <b>Contact</b>: Saugato Rahman Dhruba (saugatorahman.dhruba@nih.gov)  
-Cancer Data Science Lab, CCR, NCI, NIH  
+Cancer Data Science Lab, National Cancer Institute, National Institutes of Health  
 </ul>
