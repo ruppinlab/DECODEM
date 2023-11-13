@@ -8,7 +8,7 @@ We developed a novel computational framework called **DECODEM** (<ins>DE</ins>co
 The output of the framework is the cell-type-specific predictive powers (in terms of AUC and AP) which we use to *rank* the cell types in BC-TME and externally validate in multiple independent cohorts encompassing both bulk and single-cell transcriptomics.  
 
 ![DECODEM](./figures/Fig1_DECODEM_v2.png)  
-<ul>*Figure: The full analysis pipeline for DECODEM and DECODEMi*</ul>
+*Figure: The full analysis pipeline for DECODEM and DECODEMi*
 
 <br></br>
 Furthermore, we investigate the interactions between different cell types in two ways:  
