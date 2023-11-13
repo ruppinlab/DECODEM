@@ -16,7 +16,6 @@ RUN_CF="$PROJ/analysis/CODEFACS/CODEFACS2/scripts";
 ODIR_CF="$RUN_CF/out_codefacs_brightness_v2";
 
 ## data files.
-# BULK="$ODIR/GSE164458_BrighTNess_RNAseq_TPM_SRD_04Oct2022.csv";
 BULK="$ODIR/GSE164458_BrighTNess_RNAseq_TPM_v2_SRD_09Oct2022.csv";
 SIGN="$PROJ/data/celltype_signature/signature_scSigR_BRCA.csv";
 
