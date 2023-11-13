@@ -80,7 +80,7 @@ The enrichment analyses results and all the figures/panels in the manuscript can
 
 
 <b>Reproducing the figures</b>  
-To reproduce the figures, use the following scripts:  
+To reproduce the figures, use the following scripts in [analysis/enrichment_and_figures/](analysis/enrichment_and_figures/):  
 - Figs. 2, 3A-D, S1-2: `generate_plots_ctp_v2.py`  
 - Figs. 4, S4A-D: `generate_plots_cci_v2.py`  
 - Figs. 5, S5: `generate_plots_sc_surv_v2.py`  
