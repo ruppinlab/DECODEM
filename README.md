@@ -57,7 +57,7 @@ glue >= 1.6
 ## Reproducing the results
 All the main results presented in the above manuscript can be reproduced by using the codes in [analysis/machine_learning](analysis/machine_learning/). 
 
-<b>DECODEM</b>  
+### DECODEM  
 - To perform the cross-validation analysis using the TransNEO cohort, use the script `model_transneo_cv_v1.py`  
 - To train the cell-type-specific / multi-cell-ensemble predictors using TransNEO and validate on the ARTemis + PBCP cohort, use the script `predict_sammut_validation_v2.py`  
 - To train the cell-type-specific / multi-cell-ensemble predictors using TransNEO and validate on the BrighTNess cohort, use the script `predict_brightness_validation_v2.py`  
