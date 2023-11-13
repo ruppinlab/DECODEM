@@ -17,9 +17,10 @@ Furthermore, we investigate the interactions between different cell types in two
 
 Our findings in breast cancer highlight the considerable predictive powers of the immune and stromal cells in the TME as well as denote key CCIs that are strongly predictive of chemotherapy response.  
 
-***The relevant manuscript is currently under review*  
+<ul>
+<i>The relevant manuscript is currently under review</i>  
 Authors: Saugato Rahman Dhruba, Sahil Sahni, Binbin Wang, Di Wu, Yael Schmidt, Eldad D. Shulman, Sanju Sinha, Stephen-John Sammut, Carlos Caldas, Kun Wang, Eytan Ruppin  
-
+</ul>
 
   
 <br></br>
