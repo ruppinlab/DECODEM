@@ -8,8 +8,8 @@ We developed a novel computational framework called **DECODEM** (<ins>DE</ins>co
 The output of the framework is the cell-type-specific predictive powers (in terms of AUC and AP) which we use to *rank* the cell types in BC-TME and externally validate in multiple independent cohorts encompassing both bulk and single-cell transcriptomics.  
 
 Furthermore, we investigate the interactions between different cell types in two ways:  
-* <bi>Multi-cell-ensemble</bi>: we incorporate the expression profiles of the top predictive cell types to boost the predictive power even further, yielding the best performance for an ensemble of immune and stromal cell types across two independent cohorts.  
-* <bi>DECODEMi</bi>: we extended DECODEM to **DECODEMi** ('i' stands for interaction) where we use the inferred cell-cell interactions (CCIs) to identify the cellular communications that influence chemotherapy response.  
+* <b><i>Multi-cell-ensemble</i></b>: we incorporate the expression profiles of the top predictive cell types to boost the predictive power even further, yielding the best performance for an ensemble of immune and stromal cell types across two independent cohorts.  
+* <b><i>DECODEMi</i></b>: we extended DECODEM to **DECODEMi** ('i' stands for interaction) where we use the inferred cell-cell interactions (CCIs) to identify the cellular communications that influence chemotherapy response.  
 
 Our findings in breast cancer highlight the considerable predictive powers of the immune and stromal cells in the TME as well as denote key CCIs that are strongly predictive of chemotherapy response.  
 
