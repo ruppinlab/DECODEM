@@ -107,6 +107,5 @@ if `svdat = True` in the scripts, the figures will be saved in [data/plots](data
 Examples of the figures generated are provided in [figures](figures/).  
   
   
-#### Contact
-Saugato Rahman Dhruba (saugatorahman.dhruba@nih.gov)  
+#### Contact: Saugato Rahman Dhruba (saugatorahman.dhruba@nih.gov)  
 Cancer Data Science Lab, National Cancer Institute, National Institutes of Health  
