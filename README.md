@@ -30,7 +30,6 @@ Furthermore, we investigate the interactions between different cell types in two
 * <b><i>DECODEMi</i></b>: we extended DECODEM to **DECODEMi** ('i' stands for interaction) where we use the <b>inferred cell-cell interactions (CCIs)</b> to identify the cellular communications that influence chemotherapy response.  
 
 Our findings in breast cancer highlight the considerable predictive powers of the immune and stromal cells in the TME as well as denote key CCIs that are strongly predictive of chemotherapy response.  
-</div></br>
 
 
 ## Dependencies  
