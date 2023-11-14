@@ -1,6 +1,7 @@
 <div align="justify">
 
-## DECODEM / DECODEMi: Systematic assessment of the roles of diverse cell types in the tumor microenvironment in clinical response from bulk transcriptome  
+# DECODEM / DECODEMi  
+## Systematic assessment of the roles of diverse cell types in the tumor microenvironment in clinical response from bulk transcriptome  
 
 </div>
 
