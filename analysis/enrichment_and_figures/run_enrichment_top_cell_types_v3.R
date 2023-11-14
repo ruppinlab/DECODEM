@@ -307,7 +307,7 @@ print(fig.plot3)
 svdat <- F                                                                          # set T to save figure 
 if (svdat){
     datestamp <- DateTime()                                                         # datestamp for analysis
-    fig.path  <- "../data/TransNEO/transneo_analysis/plots/"
+    fig.path  <- "../data/plots/"
     fig.file3 <- glue("transneo_chemo_gsea_reactome_pathways_all_v3_{datestamp}.pdf")
     
     pdf(file = paste0(fig.path, fig.file3), height = 52, width = 60)

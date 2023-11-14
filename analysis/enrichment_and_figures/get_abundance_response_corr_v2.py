@@ -185,7 +185,7 @@ plt.show()
 ## save figures.
 if svdat:
     datestamp = date_time()
-    fig_path  = data_path[0] + "plots/"
+    fig_path  = "../data/plots/"
     os.makedirs(fig_path, exist_ok = True)                                     # creates figure dir if it doesn't exist
     
     fig_fileS3 = f"all_chemo_abundance_response_association_{datestamp}.pdf"

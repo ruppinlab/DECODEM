@@ -314,7 +314,7 @@ print(fig.plotsS3$final)
 svdat <- F                                                                          # set T to save figure 
 if (svdat){
     datestamp  <- DateTime()                                                        # datestamp for analysis
-    fig.path   <- "../data/TransNEO/transneo_analysis/plots/"
+    fig.path   <- "../data/plots/"
     fig.fileS3 <- glue("all_chemo_CD4_CD8_performance_{use.ctp}_v2_{datestamp}.pdf")
     
     pdf(file = paste0(fig.path, fig.fileS3), height = 24, width = 48)

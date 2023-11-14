@@ -311,7 +311,7 @@ plt.show()
 
 ## save figures.
 if svdat:
-    fig_path = data_path + "../plots/"    
+    fig_path = "../data/plots/"
     os.makedirs(fig_path, exist_ok = True)                                     # creates figure dir if it doesn't exist
     
     fig_file4 = data_file[1].replace("tn_valid", "all").replace(
@@ -441,7 +441,7 @@ plt.show()
 
 ## save figures.
 if svdat:
-    fig_path = data_path + "../plots/"    
+    fig_path = "../data/plots/"
     os.makedirs(fig_path, exist_ok = True)                                     # creates figure dir if it doesn't exist
     
     fig_fileS4 = data_file[-1].replace(

@@ -59,7 +59,7 @@ All the main results presented in the above manuscript can be reproduced by usin
 
 
 ### Data preprocessing  
-All the datasets should be deposited in [data](data/) using the structure outlined. To preprocess data into the desired formats, use the scripts in [analysis/preprocessing](analysis/preprocessing/).  
+All datasets should be deposited in [data](data/) using the structure outlined. To preprocess data into the desired formats, use the scripts in [analysis/preprocessing](analysis/preprocessing/).  
 Examples of the processed datasets are provided in: [data/TransNEO](data/TransNEO/) and [data/BrighTNess](data/BrighTNess/). 
 
 
@@ -91,7 +91,7 @@ To reproduce the figures, use the following scripts in [analysis/enrichment_and_
 - Fig. 4, Supp. Figs. 4A-D: `generate_plots_cci_v2.py`  
 - Fig. 5, Supp. Fig. 5: `generate_plots_sc_surv_v2.py`  
 
-Examples of the generated figures are provided in [figures](figures/). 
+if `svdat = True` in the scripts, the figures will be saved in: [data/plots](data/plots/) (the directory will be created if it doesn't exist already). Examples of the figures generated are provided in [figures](figures/). 
 
 
   

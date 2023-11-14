@@ -156,7 +156,7 @@ print(fig.plotS4$final)
 svdat <- F                                                                          # set T to save figure 
 if (svdat){
     datestamp  <- DateTime()                                                        # datestamp for analysis
-    fig.path   <- "../data/TransNEO/transneo_analysis/plots/"
+    fig.path   <- "../data/plots/"
     fig.fileS4 <- glue("tnbc_sc_validation_cci_pseudopatients{pval.cut}_p{pval.sig}_{datestamp}.pdf")
     
     pdf(file = paste0(fig.path, fig.fileS4), height = 16, width = 48)

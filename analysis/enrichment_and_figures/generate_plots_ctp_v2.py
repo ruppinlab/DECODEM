@@ -281,7 +281,7 @@ plt.show()
 
 ## save figures.
 if svdat:
-    fig_path = data_path[0] + "../plots/"    
+    fig_path = "../data/plots/"
     os.makedirs(fig_path, exist_ok = True)                                     # creates figure dir if it doesn't exist
     
     fig_file2 = data_file[1].replace(
@@ -471,7 +471,7 @@ plt.show()
 
 ## save figures.
 if svdat:
-    fig_path = data_path[0] + "../plots/"    
+    fig_path = "../data/plots/"
     os.makedirs(fig_path, exist_ok = True)                                     # creates figure dir if it doesn't exist
     
     fig_file2 = data_file[1].replace(
@@ -593,7 +593,7 @@ plt.show()
 
 ## save figures.
 if svdat:
-    fig_path = data_path[0] + "../plots/"    
+    fig_path = "../data/plots/"
     os.makedirs(fig_path, exist_ok = True)                                     # creates figure dir if it doesn't exist
     
     fig_fileS1 = "all_responders_subtypes_treatment_stats.pdf"
@@ -745,7 +745,7 @@ plt.show()
 
 ## save figures.
 if svdat:
-    fig_path = data_path[0] + "../plots/"    
+    fig_path = "../data/plots/"
     os.makedirs(fig_path, exist_ok = True)                                     # creates figure dir if it doesn't exist
     
     fig_fileS2 = data_file[1].replace(

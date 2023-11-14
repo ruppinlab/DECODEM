@@ -321,7 +321,7 @@ plt.show()
 
 ## save figures.
 if svdat:
-    fig_path = data_path + "../plots/"
+    fig_path = "../data/plots/"
     os.makedirs(fig_path, exist_ok = True)                                     # creates figure dir if it doesn't exist
     
     fig_file5 = data_file[1].replace(
@@ -507,7 +507,7 @@ plt.show()
 
 ## save figures.
 if svdat:
-    fig_path = data_path + "../plots/"
+    fig_path = "../data/plots/"
     os.makedirs(fig_path, exist_ok = True)                                     # creates figure dir if it doesn't exist
     
     fig_fileS5 = "all_sc_scores_AUC_survival_KMplots.pdf"
