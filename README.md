@@ -34,6 +34,7 @@ matplotlib >= 3.7
 seaborn >= 0.12
 tqdm >= 4.63  
 lifelines >= 0.27  
+pickle 4.0  
 ```  
   
 For `R` scripts:  
