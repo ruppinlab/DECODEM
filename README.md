@@ -108,7 +108,7 @@ The enrichment analyses results and the figures (or panels) in the manuscript ca
 
 - `run_enrichment_top_cell_types_v3.R`: performs cell-type-specific GSEA analysis and generates Fig. 3E.
 - `enrichment_cd4_cd8_tcells_v2.R`: performs GSVA analysis for CD4<sup>+</sup>/CD8<sup>+</sup> T-cells, estimates their predictive power and generates Supp. Figs. 3A-D.   
-- `get_abundance_response_corr_v2.py`: performs the association analysis between cell abundance and chemotherapy response, and generates Supp. Figs. 3E-G.  
+- `get_abundance_response_corr_v2.py`: performs the association analysis between cell type abundance and chemotherapy response, and generates Supp. Figs. 3E-G.  
 
 If `svdat = True` in the scripts, the figure panels will be saved in [data/plots](data/plots/) (in .pdf format).  
 
