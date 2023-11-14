@@ -1,3 +1,5 @@
+<div align="justify">
+
 # DECODEM / DECODEMi: Systematic assessment of the roles of diverse cell types in TME in clinical response from bulk transcriptome  
 
 <i>**The relevant manuscript is currently under review:   
@@ -21,7 +23,7 @@ AP = Average precision, equivalent to the area under the precision-recall curve
 <i>Figure: The full analysis pipeline for DECODEM and DECODEMi</i>
 </div>  
 
-  
+<br></br>  
 Furthermore, we investigate the interactions between different cell types in two ways:  
 * <b><i>Multi-cell-ensemble</i></b>: we incorporate the expression profiles of the top predictive cell types to boost the predictive power even further, yielding the best performance for an <b>ensemble of immune and stromal cell types</b> across two independent cohorts.  
 * <b><i>DECODEMi</i></b>: we extended DECODEM to **DECODEMi** ('i' stands for interaction) where we use the <b>inferred cell-cell interactions (CCIs)</b> to identify the cellular communications that influence chemotherapy response.  
@@ -119,3 +121,5 @@ Examples of the figures generated are provided in [figures](figures/).
 #### Contact: 
 Saugato Rahman Dhruba (saugatorahman.dhruba@nih.gov)  
 Cancer Data Science Lab, National Cancer Institute, National Institutes of Health  
+
+</div>
