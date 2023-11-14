@@ -11,8 +11,8 @@ We developed a novel computational framework called **DECODEM** (<ins>DE</ins>co
 
 The output of the framework is the cell-type-specific predictive powers (in terms of AUC and AP) which we use to <b><i>rank</i></b> the cell types in BC-TME and externally validate in multiple independent cohorts encompassing both bulk and single-cell (SC) transcriptomics.  
 <i>
-*AUC = the area under the receiver operating characteristics curve  
-*AP = average precision, equivalent to the area under the precision-recall curve  
+*AUC = Area under the receiver operating characteristics curve  
+*AP = Average precision, equivalent to the area under the precision-recall curve  
 </i>  
 
 
