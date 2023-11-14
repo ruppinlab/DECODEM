@@ -9,7 +9,7 @@ We developed a novel computational framework called **DECODEM** (<ins>DE</ins>co
 1. <b>Deconvolution</b> [[see relevant codes](analysis/deconvolution/)]: we use [CODEFACS](https://github.com/ruppinlab/CODEFACS/) to deconvolve the bulk gene expression into nine cell-type-specific gene expression profiles encompassing malignant, immune, and stromal cell types.  
 2. <b>Machine Learning</b> [[see relevant codes](analysis/machine_learning/)]: we use a four-stage **ML pipeline** to build nine cell-type-specific predictors of chemotherapy response using the deconvolved expression profiles.    
 
-The output of the framework is the cell-type-specific predictive powers (in terms of AUC and AP) which we use to *rank* the cell types in BC-TME and externally validate in multiple independent cohorts encompassing both bulk and single-cell transcriptomics.  
+The output of the framework is the cell-type-specific predictive powers (in terms of AUC and AP) which we use to *rank* the cell types in BC-TME and externally validate in multiple independent cohorts encompassing both bulk and single-cell (SC) transcriptomics.  
 
 ![DECODEM](figures/Fig1_DECODEM_v2.png)  
 *Figure: The full analysis pipeline for DECODEM and DECODEMi*  
@@ -22,6 +22,8 @@ Our findings in breast cancer highlight the considerable predictive powers of th
 
 
 ## Dependencies  
+DECODEM / DECODEMi was developed using `python` on mac. The scripts can be run interactively using any `python` IDEs or on command line as `python script_name.py`. Complementary analyses including enrichment analysis, CCI validation in SC, and plot generation were performed using `R` on RStudio.  
+
 For `python` scripts:  
 ```python
 python >= 3.8  
@@ -56,14 +58,14 @@ glue >= 1.6
 
 
 ## Reproducing the results
-All the main results presented in the above manuscript can be reproduced by using the codes in [analysis/machine_learning](analysis/machine_learning/). This assumes that the bulk expression datasets have already been deconvolved and put in the designated directories within [data](data/).  
+All the results presented in the above manuscript can be reproduced by using the scripts in [analysis/machine_learning](analysis/machine_learning/). This assumes that the bulk expression datasets have already been deconvolved and put in the designated directories within [data](data/).  
 - The deconvolution was achieved by using the `slurm` scripts in [analysis/deconvolution](analysis/deconvolution/).  
 - The scripts for the current version of [CODEFACS](https://github.com/ruppinlab/CODEFACS/) should be put in [analysis/CODEFACS](analysis/CODEFACS/).  
-- The `slurm` scripts were run on the NIH HPC system, [Biowulf](https://hpc.nih.gov/).     
+- The `slurm` scripts were run on the NIH HPC system, [Biowulf](https://hpc.nih.gov/).   
 
 
 ### Data preprocessing  
-All datasets should be deposited in [data](data/) using the structure outlined. To preprocess data into the desired formats, use the scripts in [analysis/preprocessing](analysis/preprocessing/).  
+All datasets should be deposited in [data](data/) using the structure outlined. To process data into the desired formats, use the scripts in [analysis/preprocessing](analysis/preprocessing/).  
 Examples of some processed datasets are provided in [data/TransNEO](data/TransNEO/) and [data/BrighTNess](data/BrighTNess/). 
 
 
@@ -74,7 +76,7 @@ Examples of some processed datasets are provided in [data/TransNEO](data/TransNE
 - To train the cell-type-specific predictors using TransNEO and validate on the Zhang et al. single-cell cohort, use the script: `predict_tnbc_sc_validation_v2.py`  
 - To train the cell-type-specific predictors using TransNEO and stratify survival on the TCGA-BRCA cohort, use the script: `stratify_tcga_validation_v3.py` 
 
-If `svdat = True` in the scripts, the predictions will be saved in [data/TransNEO/transneo_analysis/mdl_data](data/TransNEO/transneo_analysis/mdl_data).  
+If `svdat = True` in the scripts, the predictions will be saved in [data/TransNEO/transneo_analysis/mdl_data](data/TransNEO/transneo_analysis/mdl_data/).  
 
 
 #### DECODEMi  
@@ -83,20 +85,20 @@ If `svdat = True` in the scripts, the predictions will be saved in [data/TransNE
 - To train the CCI-based predictors using TransNEO and validate on the BrighTNess cohort, use the script: `predict_brightness_lirics_validation_v2.py`  
 - To computationally validate the top CCIs for prediction in TNBC that were extracted from DECODEMi using the single-cell pseudopatient cohort generated from the Zhang et al. SC-TNBC cohort (generates Figs. S4E-F),  use the script: `predict_sc_validation_cci_pseudopatients_v1.R`  
 
-If `svdat = True` in the scripts, the predictions will be saved in [data/TransNEO/transneo_analysis/mdl_data](data/TransNEO/transneo_analysis/mdl_data).  
+If `svdat = True` in the scripts, the predictions will be saved in [data/TransNEO/transneo_analysis/mdl_data](data/TransNEO/transneo_analysis/mdl_data/).  
 
 
 ### Enrichment & other analyses  
 The enrichment analyses results and the figures/panels in the manuscript can be reproduced using the codes in [analysis/enrichment_and_figures](analysis/enrichment_and_figure/).  
 - To perform the cell-type-specific GSEA analysis (generates *Fig. 3E*), use the script: `run_enrichment_top_cell_types_v3.R`
 - To perform the GSVA analysis for CD4<sup>+</sup> / CD8<sup>+</sup> T-cells and estimate their predictive power (generates *Supp. Figs. 3A-D*), use the script: `enrichment_cd4_cd8_tcells_v2.R`   
-- To perform the association analysis between cell-type-abundance and chemotherapy response (generates *Supp. Figs. 3E-G*), use the script: `python get_abundance_response_corr_v2.py`  
+- To perform the association analysis between cell-type-abundance and chemotherapy response (generates *Supp. Figs. 3E-G*), use the script: `get_abundance_response_corr_v2.py`  
 
-If `svdat = True` in the scripts, the figure panels will be saved in [data/plots](data/plots).  
+If `svdat = True` in the scripts, the figure panels will be saved in [data/plots](data/plots/).  
 
 
 ### Reproducing the figures  
-Fig. 1 was generated using Biorender. To reproduce the remaining figures, use the following scripts in [analysis/enrichment_and_figures](analysis/enrichment_and_figures/):  
+Fig. 1 was generated using [Biorender](http://biorender.com/). To reproduce the remaining figures, use the following scripts in [analysis/enrichment_and_figures](analysis/enrichment_and_figures/):  
 - Figs. 2, 3A-D, Supp. Figs. 1-2: `generate_plots_ctp_v2.py`  
 - Fig. 4, Supp. Figs. 4A-D: `generate_plots_cci_v2.py`  
 - Fig. 5, Supp. Fig. 5: `generate_plots_sc_surv_v2.py`  
