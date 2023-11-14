@@ -22,7 +22,7 @@ AP = Average precision, equivalent to the area under the precision-recall curve
 ![DECODEM](figures/Fig1_DECODEM_v2.png)  
 <div align="center"><sup><i>
 Figure: The full analysis pipeline for DECODEM and DECODEMi
-</i></sup></div>  
+</i></sup>  
 
 <br></br>
 Furthermore, we investigate the interactions between different cell types in two ways:  
