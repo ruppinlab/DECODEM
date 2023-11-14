@@ -101,7 +101,7 @@ Fig. 1 was generated using Biorender. To reproduce the remaining figures, use th
 - Fig. 5, Supp. Fig. 5: `generate_plots_sc_surv_v2.py`  
 
 if `svdat = True` in the scripts, the figures will be saved in [data/plots](data/plots/) (the directory will be created if it doesn't exist already).  
-Examples of the figures generated are provided in [figures](figures/).  
+Examples of the figures generated are provided in figures/.  
 
   
 <br></br>
