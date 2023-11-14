@@ -57,6 +57,12 @@ glue >= 1.6
 ## Reproducing the results
 All the main results presented in the above manuscript can be reproduced by using the codes in [analysis/machine_learning](analysis/machine_learning/). This assumes that the bulk expression data has already been deconvolved and put inside [data](data/), which can be achieved by using the scripts in [analysis/deconvolution](analysis/deconvolution/).  
 
+
+### Data preprocessing  
+All the datasets should be deposited in [data](data/) using the structure outlined. To preprocess data into the desired formats, use the scripts in [analysis/preprocessing](analysis/preprocessing/).  
+Examples of the processed datasets are provided in: [data/TransNEO](data/TransNEO/) and [data/BrighTNess](data/BrighTNess/). 
+
+
 ### DECODEM  
 - To perform the cross-validation analysis using the TransNEO cohort, use the script: `model_transneo_cv_v1.py`  
 - To train the cell-type-specific / multi-cell-ensemble predictors using TransNEO and validate on the ARTemis + PBCP cohort, use the script: `predict_sammut_validation_v2.py`  
@@ -86,11 +92,6 @@ To reproduce the figures, use the following scripts in [analysis/enrichment_and_
 - Fig. 5, Supp. Fig. 5: `generate_plots_sc_surv_v2.py`  
 
 Examples of the generated figures are provided in [figures](figures/). 
-
-
-#### Data preprocessing  
-All the datasets should be deposited in [data](data/) using the structure outlined. To preprocess data into the desired formats, use the scripts in [analysis/preprocessing](analysis/preprocessing/).  
-Examples of the processed datasets are provided in: [data/TransNEO](data/TransNEO/) and [data/BrighTNess](data/BrighTNess/). 
 
 
   
