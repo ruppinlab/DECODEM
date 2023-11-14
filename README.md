@@ -27,7 +27,7 @@ Our findings in breast cancer highlight the considerable predictive powers of th
 
 
 ## Dependencies  
-The deconvolution was performed on HPC environment using `R` and `Rslurm` (as part of CODEFACS). The CCIs were inferred by using [LIRICS](https://github.com/ruppinlab/CODEFACS/) on the deconvolved data.  
+The deconvolution was performed on HPC environment using `R` and `Rslurm` (as part of CODEFACS). The CCIs were inferred by using [LIRICS](https://github.com/ruppinlab/CODEFACS/) on the deconvolved data using `R`.  
 The ML predictors were developed on MacOS using `python` and further tested on linux (on HPC). The ML scripts can be run interactively using a `python` IDE or on command line as `python <i>script_name</i>`. Complementary analyses including data preprocessing, enrichment analysis, CCI validation in SC, and plot generation were performed locally using `R` on RStudio.  
 
 For `python` scripts:  
