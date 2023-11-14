@@ -70,6 +70,8 @@ Examples of the processed datasets are provided in: [data/TransNEO](data/TransNE
 - To train the cell-type-specific predictors using TransNEO and validate on the Zhang et al. single-cell cohort, use the script: `predict_tnbc_sc_validation_v2.py`  
 - To train the cell-type-specific predictors using TransNEO and stratify survival on the TCGA-BRCA cohort, use the script: `stratify_tcga_validation_v3.py` 
 
+If `svdat = True` in the scripts, the results will be saved in [data/TransNEO/transneo_analysis/mdl_data](data/TransNEO/transneo_analysis/mdl_data).  
+
 
 #### DECODEMi  
 - To perform the cross-validation analysis using the TransNEO cohort and extract the top predictive CCIs, use the script: `model_transneo_lirics_cv_v3.py`  
@@ -77,12 +79,16 @@ Examples of the processed datasets are provided in: [data/TransNEO](data/TransNE
 - To train the CCI-based predictors using TransNEO and validate on the BrighTNess cohort, use the script: `predict_brightness_lirics_validation_v2.py`  
 - To computationally validate the top CCIs for prediction in TNBC that were extracted from DECODEMi using the single-cell pseudopatient cohort generated from the Zhang et al. SC-TNBC cohort (generates Figs. S4E-F),  use the script: `predict_sc_validation_cci_pseudopatients_v1.R`  
 
+If `svdat = True` in the scripts, the results will be saved in [data/TransNEO/transneo_analysis/mdl_data](data/TransNEO/transneo_analysis/mdl_data).  
+
 
 ### Enrichment & other analyses  
 The enrichment analyses results and all the figures/panels in the manuscript can be reproduced using the codes in [analysis/enrichment_and_figures](analysis/enrichment_and_figure/).  
-- To perform the cell-type-specific GSEA analysis (generates Fig. 3E), use the script: `run_enrichment_top_cell_types_v3.R`
-- To perform the GSVA analysis for CD4<sup>+</sup> / CD8<sup>+</sup> T-cells and estimate their predictive power (generates Supp. Figs. 3A-D), use the script: `enrichment_cd4_cd8_tcells_v2.R`   
-- To perform the association analysis between cell-type-abundance and chemotherapy response (generates Supp. Figs. 3E-G), use the script: `get_abundance_response_corr_v2.py`  
+- To perform the cell-type-specific GSEA analysis (generates *Fig. 3E*), use the script: `run_enrichment_top_cell_types_v3.R`
+- To perform the GSVA analysis for CD4<sup>+</sup> / CD8<sup>+</sup> T-cells and estimate their predictive power (generates *Supp. Figs. 3A-D*), use the script: `enrichment_cd4_cd8_tcells_v2.R`   
+- To perform the association analysis between cell-type-abundance and chemotherapy response (generates *Supp. Figs. 3E-G*), use the script: `get_abundance_response_corr_v2.py`  
+
+If `svdat = True` in the scripts, the figure panels will be saved in [data/plots](data/plots).  
 
 
 ### Reproducing the figures  
