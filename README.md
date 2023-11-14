@@ -85,40 +85,43 @@ Examples of some processed datasets are provided in [data/TransNEO](data/TransNE
 
 
 ### DECODEM  
-- `model_transneo_cv_v1.py`: performs cross-validation analysis using the TransNEO cohort  
-- `predict_sammut_validation_v2.py`: trains cell-type-specific/multi-cell-ensemble predictors using TransNEO and validates on the ARTemis + PBCP cohort  
--`predict_brightness_validation_v2.py`: trains cell-type-specific/multi-cell-ensemble predictors using TransNEO and validates on the BrighTNess cohort  
-- `predict_tnbc_sc_validation_v2.py`: trains cell-type-specific predictors using TransNEO and validate on the Zhang et al. single-cell cohort  
-- `stratify_tcga_validation_v3.py`: trains cell-type-specific predictors using TransNEO and stratifies survival on the TCGA-BRCA cohort 
+- `model_transneo_cv_v1.py`: performs cross-validation analysis using the TransNEO cohort.  
+- `predict_sammut_validation_v2.py`: trains cell-type-specific/multi-cell-ensemble predictors using TransNEO and validates on the ARTemis + PBCP cohort.  
+-`predict_brightness_validation_v2.py`: trains cell-type-specific/multi-cell-ensemble predictors using TransNEO and validates on the BrighTNess cohort.  
+- `predict_tnbc_sc_validation_v2.py`: trains cell-type-specific predictors using TransNEO and validate on the Zhang et al. single-cell cohort.  
+- `stratify_tcga_validation_v3.py`: trains cell-type-specific predictors using TransNEO and stratifies survival on the TCGA-BRCA cohort. 
 
-If `svdat = True` inside the scripts, the predictions will be saved in `.pkl` format in [data/TransNEO/transneo_analysis/mdl_data](data/TransNEO/transneo_analysis/mdl_data/).  
+If `svdat = True` in the scripts, the predictions will be saved in [data/TransNEO/transneo_analysis/mdl_data](data/TransNEO/transneo_analysis/mdl_data/) (in `.pkl` format).  
 
 
 #### DECODEMi  
-- To perform the cross-validation analysis using the TransNEO cohort and extract the top predictive CCIs, use the script: `model_transneo_lirics_cv_v3.py`  
-- To train the CCI-based predictors using TransNEO and validate on the ARTemis + PBCP cohort, use the script: `predict_sammut_lirics_validation_v2.py`  
-- To train the CCI-based predictors using TransNEO and validate on the BrighTNess cohort, use the script: `predict_brightness_lirics_validation_v2.py`  
-- To computationally validate the top CCIs for prediction in TNBC that were extracted from DECODEMi using the single-cell pseudopatient cohort generated from the Zhang et al. SC-TNBC cohort (generates Figs. S4E-F),  use the script: `predict_sc_validation_cci_pseudopatients_v1.R`  
+- `model_transneo_lirics_cv_v3.py`: performs cross-validation analysis using the TransNEO cohort and extracts the top predictive CCIs.  
+- `predict_sammut_lirics_validation_v2.py`: trains CCI-based predictor using TransNEO, validates on the ARTemis + PBCP cohort and extracts the top predictive CCIs.  
+- `predict_brightness_lirics_validation_v2.py`: trains CCI-based predictor using TransNEO, validate on the BrighTNess cohort and extracts the top predictive CCIs.  
+- `predict_sc_validation_cci_pseudopatients_v1.R`: validates the top predictive CCIs extracted by DECODEMi in TNBC (using BrighTNess) with a single-cell pseudopatient cohort sourced from the Zhang et al. SC-TNBC cohort (generates *Figs. S4E-F*).  
 
-If `svdat = True` in the scripts, the predictions will be saved in [data/TransNEO/transneo_analysis/mdl_data](data/TransNEO/transneo_analysis/mdl_data/).  
+If `svdat = True` in the scripts, the predictions will be saved in [data/TransNEO/transneo_analysis/mdl_data](data/TransNEO/transneo_analysis/mdl_data/) (in `.pkl` format).  
 
 
 ### Enrichment & other analyses  
-The enrichment analyses results and the figures/panels in the manuscript can be reproduced using the codes in [analysis/enrichment_and_figures](analysis/enrichment_and_figure/).  
-- To perform the cell-type-specific GSEA analysis (generates *Fig. 3E*), use the script: `run_enrichment_top_cell_types_v3.R`
-- To perform the GSVA analysis for CD4<sup>+</sup> / CD8<sup>+</sup> T-cells and estimate their predictive power (generates *Supp. Figs. 3A-D*), use the script: `enrichment_cd4_cd8_tcells_v2.R`   
-- To perform the association analysis between cell-type-abundance and chemotherapy response (generates *Supp. Figs. 3E-G*), use the script: `get_abundance_response_corr_v2.py`  
+The enrichment analyses results and the figures (or panels) in the manuscript can be reproduced using the scripts in [analysis/enrichment_and_figures](analysis/enrichment_and_figure/).  
 
-If `svdat = True` in the scripts, the figure panels will be saved in [data/plots](data/plots/).  
+- `run_enrichment_top_cell_types_v3.R`: performs cell-type-specific GSEA analysis and generates *Fig. 3E*.
+- `enrichment_cd4_cd8_tcells_v2.R`: performs GSVA analysis for CD4<sup>+</sup> / CD8<sup>+</sup> T-cells, estimates their predictive power and generates *Supp. Figs. 3A-D*.   
+- `get_abundance_response_corr_v2.py`: performs association analysis between cell abundance and chemotherapy response, and generates *Supp. Figs. 3E-G*  
+
+If `svdat = True` in the scripts, the figure panels will be saved in [data/plots](data/plots/) (in .PDF format).  
 
 
 ### Reproducing the figures  
 Fig. 1 was generated using [Biorender](http://biorender.com/). To reproduce the remaining figures, use the following scripts in [analysis/enrichment_and_figures](analysis/enrichment_and_figures/):  
-- Figs. 2, 3A-D, Supp. Figs. 1-2: `generate_plots_ctp_v2.py`  
-- Fig. 4, Supp. Figs. 4A-D: `generate_plots_cci_v2.py`  
-- Fig. 5, Supp. Fig. 5: `generate_plots_sc_surv_v2.py`  
 
-if `svdat = True` in the scripts, the figures will be saved in [data/plots](data/plots/) (the directory will be created if it doesn't exist already).  
+- `generate_plots_ctp_v2.py`: generates Figs. 2, 3A-D, Supp. Figs. 1-2.  
+- `generate_plots_cci_v2.py`: generates Fig. 4, Supp. Figs. 4A-D.  
+- `generate_plots_sc_surv_v2.py`: generates Fig. 5, Supp. Fig. 5.  
+
+if `svdat = True` in the scripts, the figures will be saved in [data/plots](data/plots/) (in .PDF format).  
+
 Examples of the figures generated are provided in [figures](figures/).  
   
   
