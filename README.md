@@ -27,7 +27,7 @@ Our findings in breast cancer highlight the considerable predictive powers of th
 
 
 ## Dependencies  
-The deconvolution was performed on HPC environment using `R` and `Rslurm` (as part of CODEFACS). The CCIs were inferred by using [LIRICS](https://github.com/ruppinlab/CODEFACS/) on the deconvolved data using `R`.  
+The deconvolution stage was performed on HPC environment using `R` and `Rslurm` (as part of CODEFACS). The CCI inference were performed by using [LIRICS](https://github.com/ruppinlab/CODEFACS/) on the deconvolved data using `R`.  
 The ML predictors were developed on MacOS using `python` and further tested on linux (on HPC). The ML scripts can be run interactively using a `python` IDE or on command line as `python <i>script_name</i>`. Complementary analyses including data preprocessing, enrichment analysis, CCI validation in SC, and plot generation were performed locally using `R` on RStudio.  
 
 For `python` scripts:  
@@ -65,8 +65,8 @@ glue >= 1.6
 
 ## Reproducing the results
 All the results presented in the above manuscript can be reproduced by using the scripts in [analysis/machine_learning](analysis/machine_learning/). This assumes that the bulk expression datasets have already been deconvolved and put in the designated directories within [data](data/).  
-- The deconvolution was achieved by using the `slurm` scripts in [analysis/deconvolution](analysis/deconvolution/).  
-- The scripts for the current version of [CODEFACS](https://github.com/ruppinlab/CODEFACS/) should be put in [analysis/CODEFACS](analysis/CODEFACS/).  
+- The deconvolution was achieved by using the `slurm` scripts in [analysis/deconvolution/job_scripts](analysis/deconvolution/job_scripts/).  
+- The scripts for the current version of [CODEFACS and LIRICS](https://github.com/ruppinlab/CODEFACS/) should be put in [analysis/deconvolution/CODEFACS](analysis/deconvolution/CODEFACS/) and [analysis/deconvolution/LIRICS](analysis/deconvolution/LIRICS/).  
 - The `slurm` scripts were run on the NIH HPC system, [Biowulf](https://hpc.nih.gov/).   
 
 
