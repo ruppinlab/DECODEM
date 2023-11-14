@@ -98,7 +98,7 @@ If `svdat = True` in the scripts, the predictions will be saved in [data/TransNE
 - `model_transneo_lirics_cv_v3.py`: performs cross-validation analysis using the TransNEO cohort and extracts the top predictive CCIs.  
 - `predict_sammut_lirics_validation_v2.py`: trains CCI-based predictor using TransNEO, validates on the ARTemis + PBCP cohort and extracts the top predictive CCIs.  
 - `predict_brightness_lirics_validation_v2.py`: trains CCI-based predictor using TransNEO, validate on the BrighTNess cohort and extracts the top predictive CCIs.  
-- `predict_sc_validation_cci_pseudopatients_v1.R`: validates the top predictive CCIs extracted by DECODEMi in TNBC (using BrighTNess) with a single-cell pseudopatient cohort sourced from the Zhang et al. SC-TNBC cohort (generates *Figs. S4E-F*).  
+- `predict_sc_validation_cci_pseudopatients_v1.R`: validates the top predictive CCIs extracted by DECODEMi in TNBC (using BrighTNess) with a single-cell pseudopatient cohort sourced from the Zhang et al. SC-TNBC cohort and generates Figs. S4E-F.  
 
 If `svdat = True` in the scripts, the predictions will be saved in [data/TransNEO/transneo_analysis/mdl_data](data/TransNEO/transneo_analysis/mdl_data/) (in `.pkl` format).  
 
@@ -106,11 +106,11 @@ If `svdat = True` in the scripts, the predictions will be saved in [data/TransNE
 ### Enrichment & other analyses  
 The enrichment analyses results and the figures (or panels) in the manuscript can be reproduced using the scripts in [analysis/enrichment_and_figures](analysis/enrichment_and_figure/).  
 
-- `run_enrichment_top_cell_types_v3.R`: performs cell-type-specific GSEA analysis and generates *Fig. 3E*.
-- `enrichment_cd4_cd8_tcells_v2.R`: performs GSVA analysis for CD4<sup>+</sup>/CD8<sup>+</sup> T-cells, estimates their predictive power and generates *Supp. Figs. 3A-D*.   
-- `get_abundance_response_corr_v2.py`: performs association analysis between cell abundance and chemotherapy response, and generates *Supp. Figs. 3E-G*  
+- `run_enrichment_top_cell_types_v3.R`: performs cell-type-specific GSEA analysis and generates Fig. 3E.
+- `enrichment_cd4_cd8_tcells_v2.R`: performs GSVA analysis for CD4<sup>+</sup>/CD8<sup>+</sup> T-cells, estimates their predictive power and generates Supp. Figs. 3A-D.   
+- `get_abundance_response_corr_v2.py`: performs association analysis between cell abundance and chemotherapy response, and generates Supp. Figs. 3E-G.  
 
-If `svdat = True` in the scripts, the figure panels will be saved in [data/plots](data/plots/) (in .PDF format).  
+If `svdat = True` in the scripts, the figure panels will be saved in [data/plots](data/plots/) (in .pdf format).  
 
 
 ### Reproducing the figures  
