@@ -94,7 +94,7 @@ Examples of some processed datasets are provided in [data/TransNEO](data/TransNE
 If `svdat = True` in the scripts, the predictions will be saved in [data/TransNEO/transneo_analysis/mdl_data](data/TransNEO/transneo_analysis/mdl_data/) (in .pkl format).  
 
 
-#### DECODEMi: CCI-based prediction  
+### DECODEMi: CCI-based prediction  
 - `model_transneo_lirics_cv_v3.py`: performs cross-validation analysis using TransNEO and extracts the corresponding top predictive CCIs.  
 - `predict_sammut_lirics_validation_v2.py`: trains CCI-based predictor using TransNEO, validates on ARTemis + PBCP and extracts the corresponding top predictive CCIs.  
 - `predict_brightness_lirics_validation_v2.py`: trains CCI-based predictor using TransNEO, validates on BrighTNess and extracts the corresponding top predictive CCIs.  
