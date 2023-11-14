@@ -4,10 +4,12 @@
 
 </div>
 
-<i><sub>**The relevant manuscript is currently under review:</sub>   
+<i>
+**The relevant manuscript is currently under review:   
 S. R. Dhruba, S. Sahni, B. Wang, D. Wu, Y. Schmidt, E. Shulman, S. Sinha, S. Sammut, C. Caldas, K. Wang, E. Ruppin. <b>"Predicting breast cancer patient response to neoadjuvant chemotherapy from the deconvolved tumor microenvironment transcriptome"</b>, 2023.  
 </i>
 
+<div align="justify">
 We developed a novel computational framework called **DECODEM** (<ins>DE</ins>coupling <ins>C</ins>ell-type-specific <ins>O</ins>utcomes using <ins>DE</ins>convolution and <ins>M</ins>achine learning) that can systematically assess the roles of the diverse cell types in the tumor microenvironment (TME) in a given phenotype from bulk transcriptomics. In this work, we investigate the association of the diverse cell types in breast cancer TME (BC-TME) to patient response to neoadjuvant chemotherapy (R vs. NR). The framework is divided into two steps:  
 
 1. <b>Deconvolution</b> [[see relevant codes](analysis/deconvolution/)]: we use [CODEFACS](https://github.com/ruppinlab/CODEFACS/) to deconvolve the bulk gene expression into nine cell-type-specific gene expression profiles encompassing malignant, immune, and stromal cell types.  
@@ -18,7 +20,7 @@ The output of the framework is the cell-type-specific predictive powers (in term
 AUC = Area under the receiver operating characteristics curve  
 AP = Average precision, equivalent to the area under the precision-recall curve  
 </sub>  
-
+</div>
 
 ![DECODEM](figures/Fig1_DECODEM_v2.png)  
 <div align="center"><sup><i>
