@@ -105,8 +105,8 @@ Fig. 1 was generated using [Biorender](http://biorender.com/). To reproduce the 
 
 if `svdat = True` in the scripts, the figures will be saved in [data/plots](data/plots/) (the directory will be created if it doesn't exist already).  
 Examples of the figures generated are provided in [figures](figures/).  
-
   
-### Contact
+  
+#### Contact
 Saugato Rahman Dhruba (saugatorahman.dhruba@nih.gov)  
 Cancer Data Science Lab, National Cancer Institute, National Institutes of Health  
