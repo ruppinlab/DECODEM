@@ -35,9 +35,9 @@ Our findings in breast cancer highlight the considerable predictive powers of th
 ## Dependencies  
 The deconvolution stage was performed on HPC environment using `R` and `Rslurm` (as part of [CODEFACS](https://github.com/ruppinlab/CODEFACS/)). The CCI inference were performed by using [LIRICS](https://github.com/ruppinlab/CODEFACS/) on the deconvolved data using `R`.  
 
-The ML predictors were developed on MacOS using `python` and further tested on linux (on HPC). The ML scripts can be run interactively using a `python` IDE or on command line as `python *script_name*`. Complementary analyses *i.e.*, data preprocessing, enrichment analysis, CCI validation in SC, and plot generation were performed locally using `R` on RStudio.  
+The ML predictors were developed on MacOS using `python` and further tested on linux (on HPC). The ML scripts can be run interactively using a `python` IDE or on command line as `python script_name.py`. Complementary analyses *i.e.*, data preprocessing, enrichment analysis, CCI validation in SC, and plot generation were performed locally using `R` on RStudio.  
 
-For `python` scripts:  
+Dependencies for `python` scripts:  
 ```python
 python >= 3.8  
 numpy >= 1.23   
@@ -52,7 +52,7 @@ lifelines >= 0.27
 pickle 4.0  
 ```  
   
-For `R` scripts:  
+Dependencies for `R` scripts:  
 ```R
 R >= 3.6  
 tidyverse >= 1.3  
@@ -71,25 +71,27 @@ glue >= 1.6
 
 
 ## Reproducing the results
-All the results presented in the above manuscript can be reproduced by using the scripts in [analysis/machine_learning](analysis/machine_learning/). This assumes that the bulk expression datasets have already been deconvolved and put in the designated directories within [data](data/).  
+All the results presented in the above manuscript can be reproduced by using the scripts provided in [analysis/machine_learning](analysis/machine_learning/). This assumes that the bulk expression datasets have already been deconvolved and put in the designated directories within [data](data/).  
+
 - The deconvolution was achieved by using the `slurm` scripts in [analysis/deconvolution/job_scripts](analysis/deconvolution/job_scripts/).  
-- The scripts for the current version of [CODEFACS and LIRICS](https://github.com/ruppinlab/CODEFACS/) should be put in [analysis/deconvolution/CODEFACS](analysis/deconvolution/CODEFACS/) and [analysis/deconvolution/LIRICS](analysis/deconvolution/LIRICS/).  
+- The scripts for [CODEFACS and LIRICS](https://github.com/ruppinlab/CODEFACS/) should be put in [analysis/deconvolution/CODEFACS](analysis/deconvolution/CODEFACS/) and [analysis/deconvolution/LIRICS](analysis/deconvolution/LIRICS/), respectively.  
 - The `slurm` scripts were run on the NIH HPC system, [Biowulf](https://hpc.nih.gov/).   
 
 
 ### Data preprocessing  
 All datasets should be deposited in [data](data/) using the structure outlined. To process data into the desired formats, use the scripts in [analysis/preprocessing](analysis/preprocessing/).  
+
 Examples of some processed datasets are provided in [data/TransNEO](data/TransNEO/) and [data/BrighTNess](data/BrighTNess/). 
 
 
 ### DECODEM  
-- To perform the cross-validation analysis using the TransNEO cohort, use the script: `model_transneo_cv_v1.py`  
-- To train the cell-type-specific / multi-cell-ensemble predictors using TransNEO and validate on the ARTemis + PBCP cohort, use the script: `predict_sammut_validation_v2.py`  
-- To train the cell-type-specific / multi-cell-ensemble predictors using TransNEO and validate on the BrighTNess cohort, use the script: `predict_brightness_validation_v2.py`  
-- To train the cell-type-specific predictors using TransNEO and validate on the Zhang et al. single-cell cohort, use the script: `predict_tnbc_sc_validation_v2.py`  
-- To train the cell-type-specific predictors using TransNEO and stratify survival on the TCGA-BRCA cohort, use the script: `stratify_tcga_validation_v3.py` 
+- `model_transneo_cv_v1.py`: performs cross-validation analysis using the TransNEO cohort  
+- `predict_sammut_validation_v2.py`: trains cell-type-specific / multi-cell-ensemble predictors using TransNEO and validates on the ARTemis + PBCP cohort  
+-`predict_brightness_validation_v2.py`: trains cell-type-specific / multi-cell-ensemble predictors using TransNEO and validates on the BrighTNess cohort  
+- `predict_tnbc_sc_validation_v2.py`: trains cell-type-specific predictors using TransNEO and validate on the Zhang et al. single-cell cohort  
+- `stratify_tcga_validation_v3.py`: trains cell-type-specific predictors using TransNEO and stratifies survival on the TCGA-BRCA cohort 
 
-If `svdat = True` in the scripts, the predictions will be saved in [data/TransNEO/transneo_analysis/mdl_data](data/TransNEO/transneo_analysis/mdl_data/).  
+If `svdat = True` in the scripts, the predictions will be saved in `.pkl` format in [data/TransNEO/transneo_analysis/mdl_data](data/TransNEO/transneo_analysis/mdl_data/).  
 
 
 #### DECODEMi  
