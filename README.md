@@ -19,9 +19,9 @@ AP = Average precision, equivalent to the area under the precision-recall curve
 
 
 ![DECODEM](figures/Fig1_DECODEM_v2.png)  
-<div align="center">
-<sub>*Figure: The full analysis pipeline for DECODEM and DECODEMi*</sub>
-</div>  
+<div align="center"><sup><i>
+Figure: The full analysis pipeline for DECODEM and DECODEMi
+</i></sup></div>  
 
 Furthermore, we investigate the interactions between different cell types in two ways:  
 * <b><i>Multi-cell-ensemble</i></b>: we incorporate the expression profiles of the top predictive cell types to boost the predictive power even further, yielding the best performance for an <b>ensemble of immune and stromal cell types</b> across two independent cohorts.  
