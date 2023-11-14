@@ -120,7 +120,7 @@ Fig. 1 was generated using [Biorender](http://biorender.com/). To reproduce the 
 - `generate_plots_cci_v2.py`: generates Fig. 4, Supp. Figs. 4A-D.  
 - `generate_plots_sc_surv_v2.py`: generates Fig. 5, Supp. Fig. 5.  
 
-if `svdat = True` in the scripts, the figures will be saved in [data/plots](data/plots/) (in .PDF format).  
+if `svdat = True` in the scripts, the figures will be saved in [data/plots](data/plots/) (in .pdf format).  
 
 Examples of the figures generated are provided in [figures](figures/).  
   
