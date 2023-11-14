@@ -86,7 +86,7 @@ If `svdat = True` in the scripts, the predictions will be saved in [data/TransNE
 
 
 ### Enrichment & other analyses  
-The enrichment analyses results and all the figures/panels in the manuscript can be reproduced using the codes in [analysis/enrichment_and_figures](analysis/enrichment_and_figure/).  
+The enrichment analyses results and the figures/panels in the manuscript can be reproduced using the codes in [analysis/enrichment_and_figures](analysis/enrichment_and_figure/).  
 - To perform the cell-type-specific GSEA analysis (generates *Fig. 3E*), use the script: `run_enrichment_top_cell_types_v3.R`
 - To perform the GSVA analysis for CD4<sup>+</sup> / CD8<sup>+</sup> T-cells and estimate their predictive power (generates *Supp. Figs. 3A-D*), use the script: `enrichment_cd4_cd8_tcells_v2.R`   
 - To perform the association analysis between cell-type-abundance and chemotherapy response (generates *Supp. Figs. 3E-G*), use the script: `get_abundance_response_corr_v2.py`  
@@ -95,12 +95,13 @@ If `svdat = True` in the scripts, the figure panels will be saved in [data/plots
 
 
 ### Reproducing the figures  
-To reproduce the figures, use the following scripts in [analysis/enrichment_and_figures](analysis/enrichment_and_figures/):  
+Fig. 1 was generated using Biorender. To reproduce the remaining figures, use the following scripts in [analysis/enrichment_and_figures](analysis/enrichment_and_figures/):  
 - Figs. 2, 3A-D, Supp. Figs. 1-2: `generate_plots_ctp_v2.py`  
 - Fig. 4, Supp. Figs. 4A-D: `generate_plots_cci_v2.py`  
 - Fig. 5, Supp. Fig. 5: `generate_plots_sc_surv_v2.py`  
 
-if `svdat = True` in the scripts, the figures will be saved in [data/plots](data/plots/) (the directory will be created if it doesn't exist already). Examples of the figures generated are provided in [figures](figures/). 
+if `svdat = True` in the scripts, the figures will be saved in [data/plots](data/plots/) (the directory will be created if it doesn't exist already). Examples of the figures generated are provided in [figures](figures/).  
+
 
 
   
