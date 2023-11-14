@@ -71,7 +71,7 @@ glue >= 1.6
 
 
 ## Reproducing the results
-All the results presented in the above manuscript can be reproduced by using the scripts in [analysis/machine_learning](analysis/machine_learning/). This assumes that the bulk expression datasets have already been deconvolved and put in the designated directories within [data](data/).  
+All the results presented in the above manuscript can be reproduced by using the scripts provided in [analysis/machine_learning](analysis/machine_learning/). This assumes that the bulk expression datasets have already been deconvolved and put in the designated directories within [data](data/).  
 
 - The deconvolution was achieved by using the `slurm` scripts in [analysis/deconvolution/job_scripts](analysis/deconvolution/job_scripts/).  
 - The scripts for [CODEFACS and LIRICS](https://github.com/ruppinlab/CODEFACS/) should be put in respectively [analysis/deconvolution/CODEFACS](analysis/deconvolution/CODEFACS/) and [analysis/deconvolution/LIRICS](analysis/deconvolution/LIRICS/).  
@@ -95,10 +95,10 @@ If `svdat = True` in the scripts, the predictions will be saved in [data/TransNE
 
 
 #### DECODEMi  
-- `model_transneo_lirics_cv_v3.py`: performs cross-validation analysis using the TransNEO cohort and extracts the top predictive CCIs.  
-- `predict_sammut_lirics_validation_v2.py`: trains CCI-based predictor using TransNEO, validates on the ARTemis + PBCP cohort and extracts the top predictive CCIs.  
-- `predict_brightness_lirics_validation_v2.py`: trains CCI-based predictor using TransNEO, validate on the BrighTNess cohort and extracts the top predictive CCIs.  
-- `predict_sc_validation_cci_pseudopatients_v1.R`: validates the top predictive CCIs extracted by DECODEMi in TNBC (using BrighTNess) with a single-cell pseudopatient cohort sourced from the Zhang et al. SC-TNBC cohort and generates Figs. S4E-F.  
+- `model_transneo_lirics_cv_v3.py`: performs cross-validation analysis using TransNEO and extracts the corresponding top predictive CCIs.  
+- `predict_sammut_lirics_validation_v2.py`: trains CCI-based predictor using TransNEO, validates on ARTemis + PBCP and extracts the corresponding top predictive CCIs.  
+- `predict_brightness_lirics_validation_v2.py`: trains CCI-based predictor using TransNEO, validates on BrighTNess and extracts the corresponding top predictive CCIs.  
+- `predict_sc_validation_cci_pseudopatients_v1.R`: validates the top predictive CCIs extracted by DECODEMi in triple negative breast cancer (using BrighTNess) with a single-cell pseudopatient cohort sourced from the Zhang et al. SC-TNBC cohort and generates Figs. S4E-F.  
 
 If `svdat = True` in the scripts, the predictions will be saved in [data/TransNEO/transneo_analysis/mdl_data](data/TransNEO/transneo_analysis/mdl_data/) (in .pkl format).  
 
