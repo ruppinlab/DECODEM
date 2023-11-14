@@ -22,7 +22,7 @@ Our findings in breast cancer highlight the considerable predictive powers of th
 
 
 ## Dependencies  
-DECODEM / DECODEMi was developed using `python` on MacOS and further tested on linux (on HPC). The scripts can be run interactively using a `python` IDE or on command line as `python script_name.py`. Complementary analyses including enrichment analysis, CCI validation in SC, and plot generation were performed using `R` on RStudio.  
+The deconvolution was performed on HPC environment using `R` and `Rslurm` (as part of CODEFACS). The ML predictors were developed on MacOS using `python` and further tested on linux (on HPC). The ML scripts can be run interactively using a `python` IDE or on command line as `python <i>script_name</i>`. Complementary analyses including data preprocessing, enrichment analysis, CCI validation in SC, and plot generation were performed locally using `R` on RStudio.  
 
 For `python` scripts:  
 ```python
