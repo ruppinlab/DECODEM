@@ -20,7 +20,6 @@ The output of the framework is the cell-type-specific predictive powers (in term
 AUC = Area under the receiver operating characteristics curve  
 AP = Average precision, equivalent to the area under the precision-recall curve  
 </sub>  
-</div></br>
 
 ![DECODEM](figures/Fig1_DECODEM_v2.png)  
 <div align="center"><sup><i>
@@ -32,6 +31,7 @@ Furthermore, we investigate the interactions between different cell types in two
 * <b><i>DECODEMi</i></b>: we extended DECODEM to **DECODEMi** ('i' stands for interaction) where we use the <b>inferred cell-cell interactions (CCIs)</b> to identify the cellular communications that influence chemotherapy response.  
 
 Our findings in breast cancer highlight the considerable predictive powers of the immune and stromal cells in the TME as well as denote key CCIs that are strongly predictive of chemotherapy response.  
+</div></br>
 
 
 ## Dependencies  
