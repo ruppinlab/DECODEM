@@ -1,6 +1,6 @@
 <div align="justify">
 
-# DECODEM / DECODEMi: Systematic assessment of the tumor microenvironment roles in clinical response in a cell-type-specific manner from bulk transcriptome  
+# DECODEM / DECODEMi: Systematic assessment of the TME in clinical response in a cell-type-specific manner from bulk transcriptome  
 
 </div>
 
