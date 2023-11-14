@@ -71,7 +71,7 @@ glue >= 1.6
 
 
 ## Reproducing the results
-All the results presented in the above manuscript can be reproduced by using the scripts provided in [analysis](analysis/). This assumes that the bulk expression datasets have already been deconvolved and put in the designated directories within [data](data/).  
+All the results presented in the above manuscript can be reproduced by using the scripts provided in [analysis](analysis/). We assume that the bulk expression datasets have already been deconvolved and put in the designated directories within [data](data/).  
 
 - The deconvolution was achieved by using the `slurm` scripts in [analysis/deconvolution/job_scripts](analysis/deconvolution/job_scripts/).  
 - The scripts for [CODEFACS and LIRICS](https://github.com/ruppinlab/CODEFACS/) should respectively be put in [analysis/deconvolution/CODEFACS](analysis/deconvolution/CODEFACS/) and [analysis/deconvolution/LIRICS](analysis/deconvolution/LIRICS/).  
@@ -84,7 +84,7 @@ All datasets should be deposited in [data](data/) using the structure outlined. 
 Examples of some processed datasets are provided in [data/TransNEO](data/TransNEO/) and [data/BrighTNess](data/BrighTNess/). 
 
 
-### DECODEM  
+### DECODEM: Cell-type-specific prediction  
 - `model_transneo_cv_v1.py`: performs cross-validation analysis using the TransNEO cohort.  
 - `predict_sammut_validation_v2.py`: trains cell-type-specific/multi-cell-ensemble predictors using TransNEO and validates on the ARTemis + PBCP cohort.  
 -`predict_brightness_validation_v2.py`: trains cell-type-specific/multi-cell-ensemble predictors using TransNEO and validates on the BrighTNess cohort.  
@@ -94,7 +94,7 @@ Examples of some processed datasets are provided in [data/TransNEO](data/TransNE
 If `svdat = True` in the scripts, the predictions will be saved in [data/TransNEO/transneo_analysis/mdl_data](data/TransNEO/transneo_analysis/mdl_data/) (in .pkl format).  
 
 
-#### DECODEMi  
+#### DECODEMi: CCI-based prediction  
 - `model_transneo_lirics_cv_v3.py`: performs cross-validation analysis using TransNEO and extracts the corresponding top predictive CCIs.  
 - `predict_sammut_lirics_validation_v2.py`: trains CCI-based predictor using TransNEO, validates on ARTemis + PBCP and extracts the corresponding top predictive CCIs.  
 - `predict_brightness_lirics_validation_v2.py`: trains CCI-based predictor using TransNEO, validates on BrighTNess and extracts the corresponding top predictive CCIs.  
