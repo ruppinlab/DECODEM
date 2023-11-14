@@ -1,6 +1,6 @@
 <div align="justify">
 
-# DECODEM / DECODEMi: Systematic assessment of the role of the tumor microenvironment in clinical response from deconvolved bulk transcriptome  
+# DECODEM / DECODEMi: Systematic assessment of the tumor microenvironment roles in clinical response in a cell-type-specific manner from bulk transcriptome  
 
 </div>
 
