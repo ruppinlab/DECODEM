@@ -9,11 +9,8 @@ We developed a novel computational framework called **DECODEM** (<ins>DE</ins>co
 1. <b>Deconvolution</b> [[see relevant codes](analysis/deconvolution/)]: we use [CODEFACS](https://github.com/ruppinlab/CODEFACS/) to deconvolve the bulk gene expression into nine cell-type-specific gene expression profiles encompassing malignant, immune, and stromal cell types.  
 2. <b>Machine Learning</b> [[see relevant codes](analysis/machine_learning/)]: we use a four-stage **machine learning (ML) pipeline** to build nine cell-type-specific predictors of chemotherapy response using the deconvolved expression profiles.    
 
-The output of the framework is the cell-type-specific predictive powers (in terms of AUC and AP) which we use to <b><i>rank</i></b> the cell types in BC-TME and externally validate in multiple independent cohorts encompassing both bulk and single-cell (SC) transcriptomics.  
-<i>
-*AUC = Area under the receiver operating characteristics curve  
-*AP = Average precision, equivalent to the area under the precision-recall curve  
-</i>  
+The output of the framework is the cell-type-specific predictive powers (in terms of AUC and AP [^1]) which we use to <b><i>rank</i></b> the cell types in BC-TME and externally validate in multiple independent cohorts encompassing both bulk and single-cell (SC) transcriptomics.  
+[^1]: The area under the receiver operating characteristics curve and average precision, equivalent to the area under the precision-recall curve, respectively
 
 
 ![DECODEM](figures/Fig1_DECODEM_v2.png)  
