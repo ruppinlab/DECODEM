@@ -91,7 +91,7 @@ Examples of some processed datasets are provided in [data/TransNEO](data/TransNE
 - `predict_tnbc_sc_validation_v2.py`: trains cell-type-specific predictors using TransNEO and validate on the Zhang et al. single-cell cohort  
 - `stratify_tcga_validation_v3.py`: trains cell-type-specific predictors using TransNEO and stratifies survival on the TCGA-BRCA cohort 
 
-If `svdat = True` inside the scripts, the predictions will be saved in [data/TransNEO/transneo_analysis/mdl_data](data/TransNEO/transneo_analysis/mdl_data/).  
+If `svdat = True` inside the scripts, the predictions will be saved in `.pkl` format in [data/TransNEO/transneo_analysis/mdl_data](data/TransNEO/transneo_analysis/mdl_data/).  
 
 
 #### DECODEMi  
