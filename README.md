@@ -70,7 +70,7 @@ Examples of the processed datasets are provided in: [data/TransNEO](data/TransNE
 - To train the cell-type-specific predictors using TransNEO and validate on the Zhang et al. single-cell cohort, use the script: `predict_tnbc_sc_validation_v2.py`  
 - To train the cell-type-specific predictors using TransNEO and stratify survival on the TCGA-BRCA cohort, use the script: `stratify_tcga_validation_v3.py` 
 
-If `svdat = True` in the scripts, the results will be saved in [data/TransNEO/transneo_analysis/mdl_data](data/TransNEO/transneo_analysis/mdl_data).  
+If `svdat = True` in the scripts, the predictions will be saved in [data/TransNEO/transneo_analysis/mdl_data](data/TransNEO/transneo_analysis/mdl_data).  
 
 
 #### DECODEMi  
@@ -79,7 +79,7 @@ If `svdat = True` in the scripts, the results will be saved in [data/TransNEO/tr
 - To train the CCI-based predictors using TransNEO and validate on the BrighTNess cohort, use the script: `predict_brightness_lirics_validation_v2.py`  
 - To computationally validate the top CCIs for prediction in TNBC that were extracted from DECODEMi using the single-cell pseudopatient cohort generated from the Zhang et al. SC-TNBC cohort (generates Figs. S4E-F),  use the script: `predict_sc_validation_cci_pseudopatients_v1.R`  
 
-If `svdat = True` in the scripts, the results will be saved in [data/TransNEO/transneo_analysis/mdl_data](data/TransNEO/transneo_analysis/mdl_data).  
+If `svdat = True` in the scripts, the predictions will be saved in [data/TransNEO/transneo_analysis/mdl_data](data/TransNEO/transneo_analysis/mdl_data).  
 
 
 ### Enrichment & other analyses  
