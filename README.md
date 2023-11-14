@@ -71,7 +71,7 @@ glue >= 1.6
 
 
 ## Reproducing the results
-All the results presented in the above manuscript can be reproduced by using the scripts provided in [analysis/machine_learning](analysis/machine_learning/). This assumes that the bulk expression datasets have already been deconvolved and put in the designated directories within [data](data/).  
+All the results presented in the above manuscript can be reproduced by using the scripts provided in [analysis](analysis/). This assumes that the bulk expression datasets have already been deconvolved and put in the designated directories within [data](data/).  
 
 - The deconvolution was achieved by using the `slurm` scripts in [analysis/deconvolution/job_scripts](analysis/deconvolution/job_scripts/).  
 - The scripts for [CODEFACS and LIRICS](https://github.com/ruppinlab/CODEFACS/) should respectively be put in [analysis/deconvolution/CODEFACS](analysis/deconvolution/CODEFACS/) and [analysis/deconvolution/LIRICS](analysis/deconvolution/LIRICS/).  
