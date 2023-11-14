@@ -58,7 +58,7 @@ glue >= 1.6
 ## Reproducing the results
 All the main results presented in the above manuscript can be reproduced by using the codes in [analysis/machine_learning](analysis/machine_learning/). This assumes that the bulk expression datasets have already been deconvolved and put in the designated directories within [data](data/).  
 - The deconvolution can be achieved by using the `slurm` scripts in [analysis/deconvolution](analysis/deconvolution/).  
-- The codes for CODEFACS should be put in [analysis/CODEFACS](analysis/CODEFACS/).  
+- The codes for [CODEFACS](https://github.com/ruppinlab/CODEFACS/) should be put in [analysis/CODEFACS](analysis/CODEFACS/).  
 - The `slurm` scripts were run on the NIH HPC system, [Biowulf](https://hpc.nih.gov/).     
 
 
