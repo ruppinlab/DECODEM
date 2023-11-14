@@ -59,8 +59,8 @@ All the main results presented in the above manuscript can be reproduced by usin
 
 
 ### Data preprocessing  
-All datasets should be deposited in [data](data/) using the structure outlined. To preprocess data into the desired formats, use the scripts in [analysis/preprocessing](analysis/preprocessing/).  
-Examples of the processed datasets are provided in: [data/TransNEO](data/TransNEO/) and [data/BrighTNess](data/BrighTNess/). 
+All datasets should be deposited in [data](data/) using the structure outlined. To preprocess data into the desired formats, use the scripts in [analysis/preprocessing](analysis/preprocessing/). 
+Examples of some processed datasets are provided in [data/TransNEO](data/TransNEO/) and [data/BrighTNess](data/BrighTNess/). 
 
 
 ### DECODEM  
