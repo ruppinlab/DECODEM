@@ -1,4 +1,6 @@
+<div align="justify">
 # DECODEM / DECODEMi: Systematic assessment of the roles of diverse cell types in tumor microenvironment in clinical response from bulk transcriptome  
+</div>
 
 <i><sub>**The relevant manuscript is currently under review:</sub>   
 S. R. Dhruba, S. Sahni, B. Wang, D. Wu, Y. Schmidt, E. Shulman, S. Sinha, S. Sammut, C. Caldas, K. Wang, E. Ruppin. <b>"Predicting breast cancer patient response to neoadjuvant chemotherapy from the deconvolved tumor microenvironment transcriptome"</b>, 2023.  
