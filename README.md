@@ -88,7 +88,7 @@ Examples of some processed datasets are provided in [data/TransNEO](data/TransNE
 - `model_transneo_cv_v1.py`: performs cross-validation analysis using the TransNEO cohort.  
 - `predict_sammut_validation_v2.py`: trains cell-type-specific/multi-cell-ensemble predictors using TransNEO and validates on the ARTemis + PBCP cohort.  
 -`predict_brightness_validation_v2.py`: trains cell-type-specific/multi-cell-ensemble predictors using TransNEO and validates on the BrighTNess cohort.  
-- `predict_tnbc_sc_validation_v2.py`: trains cell-type-specific predictors using TransNEO and validate on the Zhang et al. single-cell cohort.  
+- `predict_tnbc_sc_validation_v2.py`: trains cell-type-specific predictors using TransNEO and validates on the Zhang et al. single-cell cohort.  
 - `stratify_tcga_validation_v3.py`: trains cell-type-specific predictors using TransNEO and stratifies survival on the TCGA-BRCA cohort. 
 
 If `svdat = True` in the scripts, the predictions will be saved in [data/TransNEO/transneo_analysis/mdl_data](data/TransNEO/transneo_analysis/mdl_data/) (in .pkl format).  
