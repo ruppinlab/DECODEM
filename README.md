@@ -87,8 +87,8 @@ Examples of some processed datasets are provided in [data/TransNEO](data/TransNE
 ### DECODEM: Cell-type-specific prediction  
 - `model_transneo_cv_v1.py`: performs cross-validation analysis using the TransNEO cohort.  
 - `predict_sammut_validation_v2.py`: trains cell-type-specific/multi-cell-ensemble predictors using TransNEO and validates on the ARTemis + PBCP cohort.  
--`predict_brightness_validation_v2.py`: trains cell-type-specific/multi-cell-ensemble predictors using TransNEO and validates on the BrighTNess cohort.  
-- `predict_tnbc_sc_validation_v2.py`: trains cell-type-specific predictors using TransNEO and validates on the Zhang et al. single-cell cohort.  
+-`predict_brightness_validation_v2.py`: trains cell-type-specific/multi-cell-ensemble predictors using TransNEO and validates on the BrighTNess cohort containing triple negative breast cancer (TNBC) patients.  
+- `predict_tnbc_sc_validation_v2.py`: trains cell-type-specific predictors using TransNEO and validates on the Zhang et al. single-cell cohort of TNBC patients (SC-TNBC).  
 - `stratify_tcga_validation_v3.py`: trains cell-type-specific predictors using TransNEO and stratifies survival on the TCGA-BRCA cohort. 
 
 If `svdat = True` in the scripts, the predictions will be saved in [data/TransNEO/transneo_analysis/mdl_data](data/TransNEO/transneo_analysis/mdl_data/) (in .pkl format).  
@@ -98,7 +98,7 @@ If `svdat = True` in the scripts, the predictions will be saved in [data/TransNE
 - `model_transneo_lirics_cv_v3.py`: performs cross-validation analysis using TransNEO and extracts the corresponding top predictive CCIs.  
 - `predict_sammut_lirics_validation_v2.py`: trains CCI-based predictor using TransNEO, validates on ARTemis + PBCP and extracts the corresponding top predictive CCIs.  
 - `predict_brightness_lirics_validation_v2.py`: trains CCI-based predictor using TransNEO, validates on BrighTNess and extracts the corresponding top predictive CCIs.  
-- `predict_sc_validation_cci_pseudopatients_v1.R`: validates the top predictive CCIs from DECODEMi in triple negative breast cancer (using BrighTNess) with a single-cell pseudopatient cohort sourced from the Zhang et al. SC-TNBC cohort and generates Figs. S4E-F.  
+- `predict_sc_validation_cci_pseudopatients_v1.R`: validates the top predictive CCIs in TNBC that were extracted by DECODEMi using BrighTNess with a single-cell pseudopatient cohort sourced from the Zhang et al. SC-TNBC cohort and generates Figs. S4E-F.  
 
 If `svdat = True` in the scripts, the predictions will be saved in [data/TransNEO/transneo_analysis/mdl_data](data/TransNEO/transneo_analysis/mdl_data/) (in .pkl format).  
 
