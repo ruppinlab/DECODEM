@@ -67,6 +67,7 @@ PRROC >= 1.3
 rstatix >= 0.7  
 ggpubr >= 0.6  
 glue >= 1.6  
+Matrix >= 1.6  
 ```
 
 
