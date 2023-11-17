@@ -75,14 +75,16 @@ Matrix >= 1.6
 All the results presented in the above manuscript can be reproduced by using the scripts provided in [analysis](analysis/). The assumption is that the different bulk expression datasets have already been deconvolved and put in the designated directories within [data](data/).  
 
 
-### Running deconvolution with [CODEFACS](https://github.com/ruppinlab/CODEFACS/)  
-- CODEFACS was run by using the `slurm` scripts in [analysis/deconvolution/job_scripts](analysis/deconvolution/job_scripts/).  
-- The scripts for CODEFACS and LIRICS should respectively be put in [analysis/deconvolution/CODEFACS](analysis/deconvolution/CODEFACS/) and [analysis/deconvolution/LIRICS](analysis/deconvolution/LIRICS/).  
-- The `slurm` scripts were run on the NIH HPC system, [Biowulf](https://hpc.nih.gov/).   
+### Running deconvolution with [CODEFACS and LIRICS](https://github.com/ruppinlab/CODEFACS/)  
+The scripts for CODEFACS and LIRICS should respectively be put in [analysis/deconvolution/CODEFACS](analysis/deconvolution/CODEFACS/) and [analysis/deconvolution/LIRICS](analysis/deconvolution/LIRICS/). The cell type signature should be in [data/celltype_signature](data/celltype_signature/).  
+
+- The deconvolution using CODEFACS was run by using the `slurm` scripts in [analysis/deconvolution/job_scripts](analysis/deconvolution/job_scripts/).  
+- The `slurm` scripts were run on the NIH HPC system, [Biowulf](https://hpc.nih.gov/).  
+- The CCI inference using LIRICS was run by using the scripts in [analysis/deconvolution/LIRICS](analysis/deconvolution/LIRICS/).  
 
 
 ### Data preprocessing  
-All datasets should be deposited in [data](data/) using the structure outlined. To process data into the desired formats, use the scripts in [analysis/preprocessing](analysis/preprocessing/).  
+All datasets should be deposited in [data](data/) using the structure outlined. To process the deconvolved data into the desired formats, use the scripts in [analysis/preprocessing](analysis/preprocessing/).  
 
 Examples of some processed datasets are provided in [data/TransNEO](data/TransNEO/) and [data/BrighTNess](data/BrighTNess/). 
 
