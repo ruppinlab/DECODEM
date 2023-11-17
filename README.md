@@ -78,9 +78,9 @@ All the results presented in the above manuscript can be reproduced by using the
 ### Running deconvolution with [CODEFACS and LIRICS](https://github.com/ruppinlab/CODEFACS/)  
 The scripts for CODEFACS and LIRICS should respectively be put in [analysis/deconvolution/CODEFACS](analysis/deconvolution/CODEFACS/) and [analysis/deconvolution/LIRICS](analysis/deconvolution/LIRICS/). The cell type signature should be in [data/celltype_signature](data/celltype_signature/).  
 
-- The deconvolution using CODEFACS was run by using the `slurm` scripts in [analysis/deconvolution/job_scripts](analysis/deconvolution/job_scripts/).  
+- Deconvolution using CODEFACS was run by using the `slurm` scripts in [analysis/deconvolution/job_scripts](analysis/deconvolution/job_scripts/).  
 - The `slurm` scripts were run on the NIH HPC system, [Biowulf](https://hpc.nih.gov/).  
-- The CCI inference using LIRICS was run by using the scripts in [analysis/deconvolution/LIRICS](analysis/deconvolution/LIRICS/).  
+- CCI inference using LIRICS was run by using the scripts in [analysis/deconvolution/LIRICS](analysis/deconvolution/LIRICS/).  
 
 
 ### Data preprocessing  
