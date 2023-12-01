@@ -108,7 +108,7 @@ If `svdat = True` in the scripts, the predictions will be saved in [data/TransNE
 If `svdat = True` in the scripts, the predictions will be saved in [data/TransNEO/transneo_analysis/mdl_data](data/TransNEO/transneo_analysis/mdl_data/) (in .pkl format).  
 
 
-### Enrichment & other analyses  
+### Enrichment & association analyses  
 The enrichment analyses results and the figures (or panels) in the manuscript can be reproduced using the scripts in [analysis/enrichment_and_figures](analysis/enrichment_and_figure/).  
 
 - `run_enrichment_top_cell_types_v3.R`: performs cell-type-specific GSEA analysis and generates Fig. 3E.
