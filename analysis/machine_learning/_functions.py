@@ -26,6 +26,8 @@ from sklearn.metrics import (roc_auc_score, average_precision_score,
                              PrecisionRecallDisplay)
 from sklearn.model_selection import StratifiedKFold, KFold, RandomizedSearchCV
 from sklearn.pipeline import Pipeline
+# from sklearnex import patch_sklearn, unpatch_sklearn
+# patch_sklearn()
 
 
 #%% classifiers.
@@ -167,6 +169,69 @@ def predict_proba_scaled(pipe, X, scale = True):
     return y_score
 
 
+#%% pipelines.
+
+class MakePipeline:
+    def __init__(self, model, random_state = 86420, max_features = 20, var_th = 0.1):
+        self.model = model
+        self.random_state = random_state
+        self.max_features = max_features
+        self.var_th = var_th
+    
+    def build_pipe(self):
+        # make pipeline.
+        self.clf_obj_ = MakeClassifier(
+            model = self.model, random_state = self.random_state
+        )
+    
+        self.pipe = Pipeline([
+            ("var_filter", VarianceThreshold(threshold = self.var_th)), 
+            ("selector",   SelectKBest(score_func = f_classif)), 
+            ("normalizer", StandardScaler()), 
+            ("classifier", self.clf_obj_.get_model())
+        ])
+        
+        # get parameters to tune.
+        self.params = { }
+        self.params["selector__k"] = np.arange(2, self.max_features + 1, 1)
+        self.params.update({
+            f"classifier__{pn}": pv for pn, pv in self.clf_obj_.get_param().items()
+        })
+        
+        return self
+    
+    def get_pipe(self):
+        self.build_pipe()
+        return self.pipe, self.params
+    
+    def fit(self, X, y, score = "roc_auc", n_iter = 20, cv = None, random_state = 84):
+        self.score_ = score
+        self.n_iter_ = n_iter
+        self.tune_seed_ = random_state
+        if cv is None:
+            self.cv_seed_ = 4
+            self.cv_tune_ = StratifiedKFold(
+                n_splits = 3, shuffle = True, random_state = self.cv_seed_
+            )
+        else:
+            self.cv_tune_ = cv
+        
+        # make pipeline.
+        self.build_pipe()
+        
+        # tune pipeline.
+        self.grid_ = RandomizedSearchCV(
+            self.pipe, self.params, scoring = self.score_, 
+            n_iter = self.n_iter_, cv = self.cv_tune_, refit = True, 
+            random_state = self.tune_seed_, verbose = 1, 
+            return_train_score = False
+        )
+        
+        self.grid_.fit(X, y)
+        
+        return self.grid_.best_estimator_, self.grid_.best_params_
+
+
 #%% performance metrics.
 
 ## classifier performance over all thresholds.
@@ -267,7 +332,11 @@ def get_best_threshold(y_true, y_pred, curve = "ROC", th_range = None):
 def make_barplot1(data, x, y, ax, fontdict, title, xlabels, xrot = 0, 
                   ylabel = None, bline = False, width = 0.8):
     ## color palettes.
-    col_bar, col_bline = "#75D0B0", "#DCDDDE"
+    # col_palette = "CMRmap"
+    # col_palette = "crest"
+    # col_bar     = "#75D0A6"
+    col_bar     = "#75D0B0"
+    col_bline   = "#DCDDDE"
     bline_prop  = {"linestyle": "--", "linewidth": 2}
     
     ## if data contains infinity- plot a barplot with breakpoints.
@@ -299,22 +368,22 @@ def make_barplot1(data, x, y, ax, fontdict, title, xlabels, xrot = 0,
         ## format plot ticks & labels.
         ylabels_t = [100, 1000, "$\infty$"]                                    # custom yticks for top plot
         ax_t.set_xlabel(None);      ax_t.set_ylabel(None);
-        ax_t.set_xticks([ ]);
+        ax_t.set_xticklabels([ ]);
         ax_t.set_yticks(ticks = np.arange(*ylims_t, 2), labels = ylabels_t, 
                         **fontdict["label"]);
         ax_t.bar_label(ax_t.containers[0], labels = bar_lbl, 
                        **fontdict["label"]);                                   # add bar heights as labels for top plot (infinity)
         
         ax_b.set_xlabel(None);      ax_b.set_ylabel(None);
-        if xrot != 0:                                                          # add model names as xticks for bottom plot
-            ax_b.set_xticks(ticks = range(len(xlabels)), labels = xlabels, 
-                            rotation = xrot, rotation_mode = "anchor", 
-                            ha = "right", va = "center", ma = "center", 
-                            position = (0, -0.02), **fontdict["label"]);
+        # ax_b.set_xticklabels(xlabels, rotation = 0, **fontdict["label"]);      # add model names as xticks for bottom plot
+        if xrot != 0:
+            ax_b.set_xticklabels(xlabels, rotation = xrot, 
+                                 rotation_mode = "anchor", ha = "right", 
+                                 va = "center", ma = "center", 
+                                 position = (0, -0.02), **fontdict["label"]);
         else:
-            ax.set_xticks(ticks = range(len(xlabels)), labels = xlabels, 
-                          ma = "center", position = (0, -0.02), 
-                          **fontdict["label"]);
+            ax.set_xticklabels(xlabels, ma = "center", position = (0, -0.02), 
+                               **fontdict["label"]);
         
         ax_b.tick_params(axis = "both", which = "major", 
                          labelsize = fontdict["label"]["fontsize"]);
@@ -370,15 +439,15 @@ def make_barplot1(data, x, y, ax, fontdict, title, xlabels, xrot = 0,
         ## format plot ticks & labels.
         ax.set_title(title, **fontdict["super"]);
         ax.set_xlabel(None);    ax.set_ylabel(ylabel, **fontdict["label"]);
-        if xrot != 0:                                                          # add model names as xticks 
-            ax.set_xticks(ticks = range(len(xlabels)), labels = xlabels, 
-                          rotation = xrot, rotation_mode = "anchor", 
-                          ha = "right", va = "center", ma = "center", 
-                          position = (0, -0.02), **fontdict["label"]);
+        # ax.set_xticklabels(xlabels, rotation = 0, **fontdict["label"]);
+        if xrot != 0:
+            ax.set_xticklabels(xlabels, rotation = xrot, 
+                               rotation_mode = "anchor", ha = "right", 
+                               va = "center", ma = "center", 
+                               position = (0, -0.02), **fontdict["label"]);
         else:
-            ax.set_xticks(ticks = range(len(xlabels)), labels = xlabels, 
-                          ma = "center", position = (0, -0.02), 
-                          **fontdict["label"]);
+            ax.set_xticklabels(xlabels, ma = "center", position = (0, -0.02), 
+                               **fontdict["label"]);
         ax.set_yticks(ticks = yticks, labels = ylabels, **fontdict["label"]);
         ax.tick_params(axis = "y", labelsize = fontdict["label"]["fontsize"]);
     
@@ -387,17 +456,33 @@ def make_barplot1(data, x, y, ax, fontdict, title, xlabels, xrot = 0,
 
 ## make nested barplots for multiple variables.
 def make_barplot2(data, x, y, hue, ax, fontdict, title, xlabels, 
-                  xrot = 0, ylabel = None, width = 0.8, bline = False, 
-                  yrefs = None, legend = True, legend_title = None,
-                  bar_label_align = True, offset = 8, trim = False):
+                  xrot = 0, colors = None, ylabel = None, width = 0.8, 
+                  bline = False, yrefs = None, legend = True, 
+                  legend_title = None, bar_label_align = True, offset = 2, 
+                  trim = False, lw = 4):
     
     ## parameters.
     ## set colors.
-    col_palette = dict(zip(data[hue].unique(), ["#E08DAC", "#F6CF6D"]))
+    col_palette = dict(zip(data[hue].unique(), 
+                           # ["#D0759F", "#88BECD"]))
+                           # ["#75D0A6", "#CD9788"]))
+                           # ["#75D0A6", "#FFD700"]))
+                           # ["#D0759F", "#88BECD"]))
+                           # ["#88BECD", "#D0759F"]))
+                           # ["#75D0C1", "#FFD744"]))
+                           # ["#75D0B0", "#FFD788"]))
+                           # ["#8ADBFF", "#FFB9DB"]))
+                           ## ["#75D0B0", "#FFC72C"]))
+                           # ["#D07595", "#7595D0"]))
+                           ["#E08DAC", "#F6CF6D"]))
+    
+    if colors is not None:
+        col_palette = dict(zip(col_palette.keys(), colors))
+    
     
     ## set lines/edges.
-    bar_prop  = {"linestyle": "-", "linewidth": 4, "edgecolor": "#000000"}
-    line_prop = {"linestyle": "--", "linewidth": 4, "color": "#000000"}
+    bar_prop  = {"linestyle": "-", "linewidth": lw, "edgecolor": "#000000"}
+    line_prop = {"linestyle": "--", "linewidth": lw, "color": "#000000"}
     
     ## set bar labels.
     n_bars  = data[hue].nunique()
@@ -428,11 +513,11 @@ def make_barplot2(data, x, y, hue, ax, fontdict, title, xlabels,
     
     ## build plot.
     sns.barplot(data = data, x = x, y = y, hue = hue, orient = "v", 
-                width = width, palette = col_palette, saturation = 0.9, 
+                width = width, palette = col_palette, saturation = 0.8, 
                 dodge = True, ax = ax, **bar_prop);                            # nested barplots
     [ax.bar_label(ax.containers[nn], labels = bar_lbl[nn], padding = 0.2, 
                   rotation = 0, **fontdict["label"]) for nn in range(n_bars)];
-    sns.despine(ax = ax, offset = 2, trim = trim);                             # keeping axes lines only
+    sns.despine(ax = ax, offset = offset, trim = trim);                        # keeping axes lines only
     
     ## add baseline.
     if bline & (yrefs is not None):
@@ -443,15 +528,14 @@ def make_barplot2(data, x, y, hue, ax, fontdict, title, xlabels,
     ax.set_title(title, y = 1.02, **fontdict["super"]);
     ax.set_xlabel(None);     ax.set_ylabel(ylabel, **fontdict["label"]);
     ax.set_yticks(ticks = yticks, labels = ylabels, **fontdict["label"]);
-    if xrot != 0:                                                              # add model names as xticks 
-        ax.set_xticks(ticks = range(len(xlabels)), labels = xlabels, 
-                      rotation = xrot, rotation_mode = "anchor", ha = "right", 
-                      va = "center", ma = "center", position = (0, -0.02), 
-                      **fontdict["label"]);
+    ax.set_xticks(range(len(xlabels)));
+    if xrot != 0:
+        ax.set_xticklabels(xlabels, rotation = xrot, rotation_mode = "anchor", 
+                           ha = "right", va = "center", ma = "center", 
+                           position = (0, -0.02), **fontdict["label"]);
     else:
-        ax.set_xticks(ticks = range(len(xlabels)), labels = xlabels, 
-                      ma = "center", position = (0, -0.02), 
-                      **fontdict["label"]);
+        ax.set_xticklabels(xlabels, ma = "center", position = (0, -0.02), 
+                           **fontdict["label"]);
     
     if legend:
         lgnd_ttl = {pn.replace("font", ""): pv \
@@ -460,49 +544,92 @@ def make_barplot2(data, x, y, hue, ax, fontdict, title, xlabels,
                          prop = lgnd_font, title = legend_title, 
                          title_fontproperties = lgnd_ttl, frameon = False);
         lgnd.get_title().set_multialignment("center");
-        [ptch.set(**bar_prop) for ptch in lgnd.get_patches()];                 # adding bounding boxes for legend icons 
+        [ptch.set(**bar_prop) for ptch in lgnd.get_patches()];
     else:
         ax.legend([ ], [ ], frameon = False)
     
     return ax
 
 
-## make barplots for a single variable.
-def make_boxplot1(data, x, y, ax, fontdict, title, xlabels, width = 0.8, 
-                  ylabel = None, x_order = None):
-    ## parameters.
-    col_palette = dict(zip(data[x].unique(), ["#75D0B0", "#FFC72C"]))
+## make ROC / PR curves for multiple models in the same plot.
+def make_performance_plot(y_true, y_preds, curve, ax, fontdict):
+    ## plot parameters.
+    colors    = ["tab:purple", "tab:olive", "tab:pink"]                        # currently set for three plots
+    lstyles   = ["--", "-.", ":"]
+    lgnd_loc  = {"ROC": "lower right", "PR": "lower left"}
+    lgnd_font = {
+        pn.replace("font", ""): pv for pn, pv in fontdict["label"].items()}
     
-    yticks  = np.arange(0, 1.4, 0.2)
-    ylabels = yticks.round(2).tolist()[:-1] + [""]
+    lw = [6, 4]
     
+    ## make plots.
+    if curve.upper() == "ROC":
+        for nn_, (mdl_, y_pred_) in enumerate(y_preds.items()):
+            RocCurveDisplay.from_predictions(
+                y_true, y_pred_, ax = ax, name = mdl_, color = colors[nn_], 
+                linestyle = lstyles[nn_], linewidth = lw[0]);
+        
+        ax.axline([0, 0], [1, 1], color = "lightgray", linestyle = ":",        # baseline AUC at 0.5
+                  linewidth = lw[1]);
+        # , label = "Baseline (AUC = 0.50)");
+        
+        ax.set_xlabel("1 $-$ Specificity", **fontdict["label"]);
+        ax.set_ylabel("Sensitivity", **fontdict["label"]);
+        ax.set_title("ROC curve", **fontdict["title"]);
+        
+    elif curve.upper() == "PR":
+        for nn_, (mdl_, y_pred_) in enumerate(y_preds.items()):
+            PrecisionRecallDisplay.from_predictions(
+                y_true, y_pred_, ax = ax, name = mdl_, color = colors[nn_], 
+                linestyle = lstyles[nn_], linewidth = lw[0]);
+        
+        ap_base = y_true.mean()                                                # baseline AP (fraction of class 1)
+        ax.axhline(y = ap_base, xmin = 0, xmax = 1, color = "lightgray", 
+                   linestyle = ":", linewidth = lw[1]); 
+                   # label = f"Baseline (AP = {ap_base:0.2f})");
+        
+        ax.set_xlabel("Recall", **fontdict["label"]);
+        ax.set_ylabel("Precision", **fontdict["label"]);
+        ax.set_title("Precision-recall curve", **fontdict["title"]);
     
-    ## build plot.
-    mprop = {"marker": "o", "markersize": 10, "markeredgecolor": [0.9]*3}
-    sns.boxplot(data = data, x = x, y = y, order = x_order, orient = "v", 
-                palette = col_palette, saturation = 0.9, width = width, 
-                boxprops = {"edgecolor": [0.3]*3}, flierprops = mprop, 
-                dodge = True, whis = 1.5, notch = False, ax = ax);
-    
-    ## format plot ticks & labels.
-    ax.set_title(title, **fontdict["title"]);
-    ax.set_xlabel(None);     ax.set_ylabel(ylabel, **fontdict["label"]);
-    ax.set_yticks(ticks = yticks, labels = ylabels, **fontdict["label"]);
-    ax.set_xticks(ticks = range(len(xlabels)), labels = xlabels, rotation = 0, 
-                  **fontdict["label"]);
-    # ax.legend(loc = lgnd_loc, prop = lgnd_font, title = None);
+    ## finalize parameters.
+    ax.set_xticks(np.arange(0, 1.1, 0.1), **fontdict["label"]);
+    ax.set_yticks(np.arange(0, 1.1, 0.1), **fontdict["label"]);
+    ax.tick_params(axis = "both", which = "major", 
+                   labelsize = fontdict["label"]["fontsize"]);
+    ax.legend(loc = lgnd_loc[curve.upper()], prop = lgnd_font, title = None);
     
     return ax
 
 
-## make nested boxplots for multiple variables.
+## make nested barplots for multiple variables.
 def make_boxplot2(data, x, y, hue, hue_order, ax, fontdict, title, xlabels, 
-                  xrot = 0, ylabel = None, width = 0.8, legend = True, 
-                  legend_title = None, offset = 8, trim = False):
+                  xrot = 0, colors = None, ylabel = None, width = 0.8, 
+                  legend = True, legend_title = None, offset = 8, trim = False):
     
     ## parameters.
     ## set colors.
-    col_palette = dict(zip(data[hue].unique(), ["#E08DAC", "#F6CF6D"]))
+    col_palette = dict(zip(data[hue].unique(), 
+                           # ["#D0759F", "#88BECD"]))
+                           # ["#75D0A6", "#CD9788"]))
+                           # ["#75D0A6", "#88BECD"]))
+                           # ["#7D26CD", "#76CD26"]))
+                           # ["#88BECD", "#CD9788"]))
+                           # ["#75D0A6", "#D0759F"]))
+                           # ["#75D0A6", "#FFD700"]))
+                           # ["#D0759F", "#88BECD"]))
+                           # ["#88BECD", "#D0759F"]))
+                           # ["#75D0C1", "#FFB400"]))
+                           # ["#75B2D0", "#D075B2"]))
+                           # ["#75D0B0", "#FFD788"]))
+                           # ["#78D0CD", "#EEB9DB"]))
+                           # ["#8ADBFF", "#FFB9DB"]))
+                           ## ["#75D0B0", "#FFC72C"]))
+                           ["#E08DAC", "#F6CF6D"]))
+    
+    if colors is not None:
+        col_palette = dict(zip(col_palette.keys(), colors))
+    
         
     ## set lines/edges.
     box_prop   = {"linestyle": "-", "linewidth": 4, "edgecolor": "#000000"}
@@ -515,6 +642,7 @@ def make_boxplot2(data, x, y, hue, hue_order, ax, fontdict, title, xlabels,
     
     ## set axis ticks.
     yticks  = np.arange(0, 1.2, 0.2)
+    # ylabels = yticks.round(2).tolist()[:-1] + [""]
     ylabels = yticks.round(2).tolist()
     
     ## set legend.
@@ -541,15 +669,13 @@ def make_boxplot2(data, x, y, hue, hue_order, ax, fontdict, title, xlabels,
     ax.set_xlim([0, data[x].nunique()]);
     ax.set_ylim([yticks.min() - 0.1, yticks.max()]);
     ax.set_yticks(ticks = yticks, labels = ylabels, **fontdict["label"]);
-    if xrot != 0:                                                              # add model names as xticks 
-        ax.set_xticks(ticks = range(len(xlabels)), labels = xlabels, 
-                      rotation = xrot, rotation_mode = "anchor", ha = "right", 
-                      va = "center", ma = "center", position = (0, 0), 
-                      **fontdict["label"]);
+    if xrot != 0:
+        ax.set_xticklabels(xlabels, rotation = xrot, rotation_mode = "anchor",
+                           ha = "right", va = "center", ma = "center", 
+                           position = (0, 0), **fontdict["label"]);
     else:
-        ax.set_xticks(ticks = range(len(xlabels)), labels = xlabels, 
-                      ma = "center", position = (0, -0.02), 
-                      **fontdict["label"]);
+        ax.set_xticklabels(xlabels, ma = "center", position = (0, -0.02), 
+                           **fontdict["label"]);
     
     if legend:
         lgnd_ttl = {pn.replace("font", ""): pv \
@@ -558,56 +684,142 @@ def make_boxplot2(data, x, y, hue, hue_order, ax, fontdict, title, xlabels,
                          prop = lgnd_font, title = legend_title, 
                          title_fontproperties = lgnd_ttl, frameon = False);
         lgnd.get_title().set_multialignment("center");
-        [ptch.set(**box_prop) for ptch in lgnd.get_patches()];                 # adding bounding boxes for legend icons 
+        [ptch.set(**box_prop) for ptch in lgnd.get_patches()];
     else:
         ax.legend([ ], [ ], frameon = False)
     
     return ax
 
 
-## add p-value significance to boxplot comparisons.
-def add_stat(ax, stats, data, x, y, fontdict, align = True):
-    for pxc_, mdl_ in enumerate(data[x].unique()):
-        px = pxc_ + np.array([-0.2, 0.2]) / 1.6
-        if align:
-            py = data[y].max() + np.array([0.025, 0.05])
-        else:
-            py = data.groupby(x).max().loc[mdl_, y] + np.array([0.025, 0.05])
-        
-        ax.plot([px[0], px[0], px[1], px[1]], [py[0], py[1], py[1], py[0]],    # plot bounding lines
-                linewidth = 4, color = "#000000");
-        ax.text(x = pxc_, y = py.max(), s = stats.loc[mdl_, "annot"],          # print p-value
-                ha = "center", va = "bottom", color = "#000000", 
-                **fontdict["label"]);
+## make barplots for a single variable.
+def make_boxplot1(data, x, y, ax, fontdict, title, xlabels, width = 0.8, 
+                  ylabel = None, x_order = None):
+    ## parameters.
+    # col_palette = "tab10"
+    col_palette = dict(zip(data[x].unique(), 
+                           # ["#D0759F", "#88BECD"]))
+                           # ["#75D0A6", "#CD9788"]))
+                           # ["#75D0A6", "#88BECD"]))
+                           # ["#7D26CD", "#76CD26"]))
+                           # ["#88BECD", "#CD9788"]))
+                           # ["#75D0A6", "#D0759F"]))
+                           # ["#75D0A6", "#FFD700"]))
+                           # ["#78D0CD", "#EEB9DB"]))
+                           ["#75D0B0", "#FFC72C"]))
     
-    ax.set_xlim([-0.5, len(stats) - 0.5]);                                     # restore the original xlims
+    yticks  = np.arange(0, 1.4, 0.2)
+    ylabels = yticks.round(2).tolist()[:-1] + [""]
+    
+    # lgnd_loc  = [0.78, 0.88]
+    # lgnd_loc  = "best"
+    # lgnd_font = {pn.replace("font", ""): pv \
+    #              for pn, pv in fontdict["label"].items()}
+    
+    ## build plot.
+    mprop = {"marker": "o", "markersize": 10, "markeredgecolor": [0.9]*3}
+    sns.boxplot(data = data, x = x, y = y, order = x_order, orient = "v", 
+                palette = col_palette, saturation = 0.9, width = width, 
+                boxprops = {"edgecolor": [0.3]*3}, flierprops = mprop, 
+                dodge = True, whis = 1.5, notch = False, ax = ax);
+    
+    # ## add p-values.
+    # pairs = list(combinations(data[x].unique(), r = 2))
+    # ann = Annotator(ax = ax, pairs = pairs, data = data, x = x, y = y, 
+    #                 order = x_order)
+    # ann.configure(test = "Mann-Whitney", text_format = "simple", 
+    #               show_test_name = False, loc = "outside")
+    # ann.apply_and_annotate()
+    
+    ## format plot ticks & labels.
+    ax.set_title(title, **fontdict["title"]);
+    ax.set_xlabel(None);     ax.set_ylabel(ylabel, **fontdict["label"]);
+    ax.set_yticks(ticks = yticks, labels = ylabels, **fontdict["label"]);
+    ax.set_xticklabels(xlabels, rotation = 0, **fontdict["label"]);
+    # ax.legend(loc = lgnd_loc, prop = lgnd_font, title = None);
     
     return ax
 
 
-## make nested barplots for multiple variables - base function.
-def make_barplot3_base(data, x, y, hue, ax, fontdict, title, xlabels, xrot = 0, 
-                       bar_labels = True, ylabel = None, width = 0.8, 
-                       bline = False, yrefs = None, legend = True, 
-                       legend_title = None, skipcolor = False, trim = False):
+def add_stat(ax, data, x, y, fontdict, test = "wilcox", pval = True, 
+             xpos = [0, 1]):
+    ## get significance level by asterisks.
+    def sig_ast(pval):
+        if pval <= 0.001:       return "***"
+        elif pval <= 0.01:      return "**"
+        elif pval <= 0.05:      return "*"
+        else:                   return "ns"
+    
+    ## get statistical significance for R vs. NR (1 vs. 0).
+    if test.lower() == "wilcox":                                               # wilcoxon rank-sum test
+        sdat = data.groupby(x).apply(
+            lambda df: df[y].tolist()).sort_index(ascending = False).values
+        stat = mannwhitneyu(*sdat, alternative = "greater", method = "auto")
+        if pval:
+            stxt = f"Wilcoxon $p$ = {stat.pvalue:0.02g}"
+        else:
+            stxt = sig_ast(stat.pvalue)
+    elif test.lower() == "t":                                                  # t-test
+        sdat = data.groupby(x).apply(
+            lambda df: df[y].apply(["mean", "std", "size"])).sort_index(
+                ascedending = False).values.ravel()
+        stat = ttest_ind_from_stats(*sdat, alternative = "greater", 
+                                    equal_var = False)
+        if pval:
+            stxt = f"t-test $p$ = {stat.pvalue:0.02g}"
+        else:
+            stxt = sig_ast(stat.pvalue)
+    
+    ## get plot parameters.        
+    yticks  = ax.get_yticks()
+    ylabels = ax.get_yticklabels()
+    
+    ## add p-value to plot.
+    px = np.array(xpos)
+    py = np.round(ax.dataLim.ymax + np.array([0.05, 0.1]), 2)
+    ax.plot([px[0], px[0], px[1], px[1]], [py[0], py[1], py[1], py[0]],        # plot bounding lines
+            linewidth = 2, color = "black");
+    
+    ax.text(x = px.mean(), y = py.max(), s = stxt, ha = "center",              # print p-value
+            va = "bottom", color = "black", **fontdict["label"]);
+    
+    ## restore yticks & fix ylim.
+    ax.set_yticks(ticks = yticks, labels = ylabels, **fontdict["label"]);
+    ax.set_ylim([-0.05, ax.get_ylim()[1]]);
+    
+    return ax
+    
+
+####
+## make nested barplots for multiple variables.
+def make_barplot3_base(data, x, y, hue, ax, fontdict, title, xlabels, 
+                       xrot = 0, bar_labels = True, ylabel = None, 
+                       width = 0.8, bline = False, yrefs = None, 
+                       legend = True, legend_title = None, colors = None,                        
+                       skipcolor = False):
     ## parameters.
+    # col_palette = "tab10"
     if data[hue].nunique() > 3:
+        # col_palette = "CMRmap"
+        # col_palette = "crest"
         col_palette = "tab20_r"
     else:
-        col_list = ["#E08DAC", "#F6CF6D", "#88BECD"]
+        if colors is None:
+            col_list = ["#75D0B0", "#FFC72C", "#88BECD"]                           # ["green", "yellow", "blue"]-ish
+        else:
+            col_list = colors
+        
         if skipcolor:
             col_list = col_list[1:] + [col_list[0]]
         
         col_palette = dict(zip(data[hue].unique(), col_list))
     
     col_bline  = "#000000"
-    bline_prop = {"linestyle": "--", "linewidth": 2}
-    bar_prop  = {"linestyle": "-", "linewidth": 4, "edgecolor": "#000000"}
+    bline_prop = {"linestyle": "--", "linewidth": 1}
     
     n_bars = data[hue].nunique()
     if bar_labels:    
         bar_lbl = [data[data[hue].eq(bb)][y].round(2) \
-                    for bb in data[hue].unique()]                               # bar heights as labels    
+                   for bb in data[hue].unique()]                               # bar heights as labels    
     
     if data[y].max() <= 1:
         yticks = np.arange(0, 1.4, 0.2)
@@ -618,48 +830,48 @@ def make_barplot3_base(data, x, y, hue, ax, fontdict, title, xlabels, xrot = 0,
     ylabels = yticks.round(2).tolist()[:-1] + [""]
     
     # lgnd_loc = [0.8, 0.84]
+    # lgnd_loc = "best"
     lgnd_loc  = "lower left"
     lgnd_bbox = (1.0, 0.5, 0.6, 0.6)
     lgnd_font = {pn.replace("font", ""): pv \
-                  for pn, pv in fontdict["label"].items()}
+                 for pn, pv in fontdict["label"].items()}
     
     ## build plot.
     sns.barplot(data = data, x = x, y = y, hue = hue, orient = "v", 
-                width = width, palette = col_palette, saturation = 0.9, 
-                dodge = True, ax = ax, **bar_prop);                            # nested barplots
+                width = width, palette = col_palette, edgecolor = "#000000", 
+                saturation = 0.8, dodge = True, ax = ax);                      # nested barplots
     if bar_labels:
         [ax.bar_label(ax.containers[nn], labels = bar_lbl[nn], padding = 0.2, 
                       rotation = 0, **fontdict["label"]) \
-          for nn in range(n_bars)];
-    sns.despine(ax = ax, offset = 2, trim = trim);                             # keeping axes lines only
+         for nn in range(n_bars)];
     
     ## add baseline.
     if bline & (yrefs is not None):
         [ax.axhline(y = yrefs[nn], xmin = 0, xmax = data.shape[0] / n_bars, 
                     color = col_bline, **bline_prop) \
-          for nn in range(n_bars)];
+         for nn in range(n_bars)];
         
     ## format plot ticks & labels.
     ax.set_title(title, y = 1.02, **fontdict["super"]);
     ax.set_xlabel(None);     ax.set_ylabel(ylabel, **fontdict["label"]);
     # ax.set_ylim([yticks.min() - 0.1, yticks.max()]);
     ax.set_yticks(ticks = yticks, labels = ylabels, **fontdict["label"]);
+    ax.set_xticks(range(len(xlabels)));
     if xrot != 0:
-        ax.set_xticks(ticks = range(len(xlabels)), labels = xlabels, 
-                      rotation = xrot, rotation_mode = "anchor", ha = "right", 
-                      va = "center", ma = "center", position = (0, -0.02), 
-                      **fontdict["label"]);
+        ax.set_xticklabels(xlabels, rotation = xrot, rotation_mode = "anchor", 
+                           ha = "right", va = "center", ma = "center", 
+                           position = (0, -0.02), **fontdict["label"]);
     else:
-        ax.set_xticks(ticks = range(len(xlabels)), labels = xlabels, 
-                      ma = "center", position = (0, -0.02), 
-                      **fontdict["label"]);
+        ax.set_xticklabels(xlabels, ma = "center", position = (0, -0.02), 
+                           **fontdict["label"]);
     
     if legend:
         lgnd_ttl = {pn.replace("font", ""): pv \
                     for pn, pv in fontdict["title"].items()}
+        # lgnd_ttl.update({"multialignment": "center"})
         lgnd = ax.legend(loc = lgnd_loc, bbox_to_anchor = lgnd_bbox, 
                   prop = lgnd_font, title = legend_title, 
-                  title_fontproperties = lgnd_ttl, frameon = False);
+                  title_fontproperties = lgnd_ttl, frameon = True);
         lgnd.get_title().set_multialignment("center");
     else:
         ax.legend([ ], [ ], frameon = False)
@@ -667,11 +879,11 @@ def make_barplot3_base(data, x, y, hue, ax, fontdict, title, xlabels, xrot = 0,
     return ax
 
 
-## make nested barplots with breaks for multiple variables - user function.
+## make nested barplots with breaks for multiple variables.
 def make_barplot3(data, x, y, hue, ax, fontdict, title, xlabels, xrot = 0, 
                   bar_labels = False, ylabel = None, width = 0.8, 
                   bline = False, yrefs = None, legend = True, 
-                  legend_title = None, skipcolor = False):
+                  legend_title = None, colors = None, skipcolor = False):
     
     if np.isinf(data[y].max()):                                                # make nested barplots with breaks
         max_val  = 200
@@ -684,7 +896,7 @@ def make_barplot3(data, x, y, hue, ax, fontdict, title, xlabels, xrot = 0,
             data = data_brk, x = x, y = y, hue = hue, width = width, 
             title = title, bar_labels = bar_labels, xlabels = xlabels, 
             xrot = xrot, ylabel = ylabel, bline = bline, yrefs = yrefs, 
-            legend = False, legend_title = legend_title, 
+            legend = False, legend_title = legend_title, colors = colors, 
             skipcolor = skipcolor, ax = ax_t, fontdict = fontdict)
         ax_t.set_xlim([-0.5, len(xlabels) - 0.5]);
         ax_t.set_ylim([ax_t_b, np.round(max_val * 1.05)]);
@@ -692,14 +904,14 @@ def make_barplot3(data, x, y, hue, ax, fontdict, title, xlabels, xrot = 0,
         ax_t.set_yticks(ticks = np.linspace(80, max_val, num = 3), 
                         labels = [100, 1000, "$\infty$"], **fontdict["label"]);
         ax_t.tick_params(axis = "x", which = "both", bottom = False, 
-                          labelbottom = False);
+                         labelbottom = False);
         
         # data_brk.loc[data_brk[y].gt(ax_b_t), y] = ax_b_t                       # hack for new py version (?)
         ax_b = make_barplot3_base(
             data = data_brk, x = x, y = y, hue = hue, width = width, 
             title = None, bar_labels = bar_labels, xlabels = xlabels, 
             xrot = xrot, ylabel = ylabel, bline = bline, yrefs = yrefs, 
-            legend = legend, legend_title = legend_title, 
+            legend = legend, legend_title = legend_title, colors = colors, 
             skipcolor = skipcolor, ax = ax_b, fontdict = fontdict)
         ax_b.set_xlim([-0.5, len(xlabels) - 0.5]);
         ax_b.set_ylim([0, ax_b_t]);     ax_b.spines["top"].set_visible(False);
@@ -709,12 +921,12 @@ def make_barplot3(data, x, y, hue, ax, fontdict, title, xlabels, xrot = 0,
         ## add breakpoint indicators.
         d_brk = 0.005                                                          # axis breakpoint tick size
         brkargs = dict(transform = ax_t.transAxes, color = "#000000", 
-                        clip_on = False)
+                       clip_on = False)
         ax_t.plot((-d_brk, +d_brk), (-d_brk, +d_brk), **brkargs)               # add breakpoint marker tick for top plot
         # ax_t.plot((1 - d_brk, 1 + d_brk), (-d_brk, +d_brk), **brkargs)
         
         brkargs.update(transform = ax_b.transAxes, color = "#000000", 
-                        clip_on = False)
+                       clip_on = False)
         ax_b.plot((-d_brk, +d_brk), (1 - d_brk, 1 + d_brk), **brkargs)         # add breakpoint marker tick for bottom plot
         # ax_b.plot((1 - d_brk, 1 + d_brk), (1 - d_brk, 1 + d_brk), **brkargs)
         
@@ -731,96 +943,5 @@ def make_barplot3(data, x, y, hue, ax, fontdict, title, xlabels, xrot = 0,
             legend_title = legend_title, skipcolor = skipcolor, ax = ax, 
             fontdict = fontdict)
         
-    return ax
-
-
-## make piechart for displaying distribution of a categorical variable.
-def make_piechart(data, x, y, title, ax, fontdict, explode = None, 
-                  ccw = False, yrot = False, ypad = 0.15):
-    ## plot parameters.
-    if data[x].size > 2:
-        colors = None
-    else:
-        colors = ["#E08DAC", "#F6CF6D"]
-    
-    wdprop  = {"edgecolor": "#000000", "linestyle": "-", "linewidth": 3, 
-              "antialiased": False}
-    txtprop = fontdict["label"];    txtprop["fontweight"] = "demibold"
-    
-    ## make plot.
-    _ = ax.pie(data = data, x = x, labels = y, explode = explode, 
-               autopct = "%0.1f%%", counterclock = ccw, shadow = False, 
-               rotatelabels = yrot, labeldistance = 1 + ypad, 
-               colors = colors, wedgeprops = wdprop, textprops = txtprop);
-    ax.set_title(title, **fontdict["title"]);
-    
-    return ax
-
-
-## make feature importance plot.
-def make_importance_plot(data, x, y, hue, hue_order, title, ax, fontdict, 
-                         plot_type = "line", xlabel = True, yticks = "left", 
-                         legend = True, legend_title = None, despine = False, 
-                         trim = False):
-    ## plot parameters.
-    colors  = ["#E08DAC", "#F6CF6D", "#7D7575", "#000000"]
-    offset  = 0.100                                                            # offset between line and marker for lollipop plot
-    dotprop = {"s": int(2e3), "linewidth": 3, "edgecolor": colors[-1]}
-    lnprop  = {"linestyle": "-", "linewidth": 16}
-    
-    points    = np.arange(0, 1.2, 0.2).round(1)
-    lgnd_loc  = "lower left"
-    lgnd_bbox = (1.0, 0.5, 0.6, 0.6)
-    lgnd_font = {pn.replace("font", ""): pv \
-                 for pn, pv in fontdict["label"].items()}
-    
-    ## make plot.
-    if plot_type == "bar":
-        hue = None
-        sns.barplot(data = data, x = x, y = y, hue = hue, orient = "h", 
-                    color = colors[0], edgecolor = colors[-1], 
-                    saturation = 0.9, dodge = True, ax = ax)
-    elif plot_type == "line":
-        ax.hlines(y = data[y], xmin = offset / 5, xmax = data[x] - offset, 
-                  color = colors[2], **lnprop);
-        
-        sns.scatterplot(data = data, x = x, y = y, hue = hue, 
-                        hue_order = hue_order, markers = True, 
-                        palette = colors[:2], ax = ax, **dotprop);
-    
-    if despine:
-        sns.despine(ax = ax, offset = 2, trim = trim);                         # keeping axes lines only
-    
-    ## set annotations.
-    if xlabel:
-        ax.set_xlabel("Feature importance", **fontdict["label"]);
-    else:
-        ax.set_xlabel(None);    
-    ax.set_ylabel(None);    ax.set_xlim([0, 1]);
-    ax.set_yticks(ticks = range(data.shape[0]), labels = data[y], 
-                  **fontdict["label"]);
-    ax.set_xticks(ticks = points, labels = points, **fontdict["label"]);
-    ax.tick_params(axis = "both", which = "major", 
-                   labelsize = fontdict["label"]["fontsize"]);
-    
-    if yticks.lower() == "right":                                              # put yticks to the right
-        ax.invert_xaxis()
-        plt.tick_params(axis = "y", left = False, right = True, 
-                        labelleft = False, labelright = True)
-        
-    ax.set_title(title, **fontdict["title"]);
-    
-    if legend:
-        dotprop["sizes"] = [dotprop["s"] * 0.7, ];    dotprop.pop("s");
-        lgnd_ttl = {pn.replace("font", ""): pv \
-                    for pn, pv in fontdict["title"].items()}
-        lgnd = ax.legend(loc = lgnd_loc, bbox_to_anchor = lgnd_bbox, 
-                         prop = lgnd_font, title = legend_title, 
-                         title_fontproperties = lgnd_ttl, frameon = False);
-        [dot.set(**dotprop) for dot in lgnd.legend_handles];
-        lgnd.get_title().set_multialignment("center");
-    else:
-        ax.legend([ ], [ ], frameon = False)    
-    
     return ax
 

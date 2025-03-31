@@ -6,22 +6,28 @@ Created on Tue Apr 25 14:27:45 2023
 @author: dhrubas2
 """
 
-## set up necessary directories/paths.
-_wpath_ = "/Users/dhrubas2/OneDrive - National Institutes of Health/Projects/TMEcontribution/analysis/submission/Code/analysis/"
-_mpath_ = "miscellaneous/py/"
-
-## load necessary packages.
 import os, sys
-sys.path.append(_wpath_);       os.chdir(_wpath_)                              # current path
+if sys.platform == "darwin":                                                   # mac
+    _mpath_ = "/Users/dhrubas2/OneDrive - National Institutes of Health/miscellaneous/py/"
+    _wpath_ = "/Users/dhrubas2/OneDrive - National Institutes of Health/Projects/TMEcontribution/analysis/analysis_final/"
+elif sys.platform == "linux":                                                  # biowulf
+    _mpath_ = "/home/dhrubas2/vivid/"
+    _wpath_ = "/data/Lab_ruppin/projects/TME_contribution_project/analysis/analysis_final/"
+
+os.chdir(_wpath_)                                                              # current path
 if _mpath_ not in sys.path:
     sys.path.append(_mpath_)                                                   # to load miscellaneous
 
 import numpy as np, pandas as pd, pickle
+# import matplotlib as mpl, matplotlib.pyplot as plt, seaborn as sns
+# from argparse import ArgumentParser
+from scipy.stats import mannwhitneyu
 from miscellaneous import date_time, tic, write_xlsx
-from machine_learning._functions import (
-    EnsembleClassifier, train_pipeline, predict_proba_scaled, 
-    get_best_threshold, classifier_performance, binary_performance)
+from _functions import (MakeClassifier, EnsembleClassifier, train_pipeline, 
+                        predict_proba_scaled, get_best_threshold, 
+                        classifier_performance, binary_performance)
 from sklearn.model_selection import StratifiedKFold, KFold
+from warnings import filterwarnings
 from copy import copy
 from tqdm import tqdm
 
@@ -36,10 +42,10 @@ def get_conf_genes(conf, th = 0.99):
 
 ## get nonzero genes for a cell type in sc data.
 ## nonzero genes: genes with a certain percentage of non-zero cells.
-def get_nz_genes(exp, th = 0.6):
+def get_nz_genes(exp, th = 0.05):
     exp   = exp[exp.var(axis = 1).ne(0)]                                       # drop non-variable genes
-    genes = exp[exp.ne(0).mean(axis = 1).ge(th)].index.tolist()
-    return genes
+    genes = exp[exp.ne(0).mean(axis = 1).gt(th)].index.tolist()
+    return genes    
 
 
 ## get top variable genes for a cell type in deconvolved / sc data.
@@ -50,10 +56,11 @@ def get_var_genes(exp, th = 0.2):
 
 #%% read data.
 
-use_samples = "chemo"                                                          # sample subset in Zhang et al.: chemo / chemo_immuno
+# use_samples = "chemo"                                                          # chemo / chemo_immuno
+use_samples = "chemo_immuno"                                                   # chemo / chemo_immuno
 
-data_path = ["../data/TransNEO/transneo_analysis/", 
-             "../data/SC_data/ZhangTNBC2021/validation/"]
+data_path = ["../../data/TransNEO/transneo_analysis/", 
+             "../../data/SC_data/ZhangTNBC2021/validation/"]
 
 data_file = ["transneo_data_chemo_v2.pkl", 
              f"tnbc_sc_data_{use_samples}_v2.pkl"]
@@ -76,11 +83,22 @@ with open(data_path[1] + data_file[1], "rb") as file:
     clin_info_test  = data_test_obj["clin"]
     del data_test_obj
 
-if "PseudoBulk" in exp_all_sc_test:
+
+## prepare data.
+if "PseudoBulk" in exp_all_sc_test.keys():
     exp_all_sc_test["Bulk"] = exp_all_sc_test["PseudoBulk"].copy()
 
 
-## prepare data.
+clin_info_test["Response"] = clin_info_test.Efficacy.eq("PR").astype(int)      # add response column just in case (CR/PR = 1; no CR in data)
+if "Cell.id" in clin_info_test.columns:
+    clin_info_test.set_index("Cell.id", inplace = True)
+
+
+resp_PR_test.sort_values(by = ["Patient.id", "Sample.id"], ascending = True, 
+                         inplace = True)
+
+
+## get overlaps.
 cell_types = np.intersect1d(
     list(exp_all_train.keys()), list(exp_all_sc_test.keys())).tolist()         # common cell types
 if "Bulk" in cell_types:
@@ -89,20 +107,12 @@ if "Bulk" in cell_types:
 samples_train = sorted(clin_info_train.index)
 samples_test  = np.unique(clin_info_test["Sample.id"]).tolist()
 
-clin_info_test["Response"] = clin_info_test.Efficacy.eq("PR").astype(int)
-if "Cell.id" in clin_info_test.columns:
-    clin_info_test.set_index("Cell.id", inplace = True)
-
-resp_PR_test = clin_info_test.loc[
-    resp_PR_test.index, ["Patient.id", "Sample.id", "Response"]].sort_values(
-        by = "Sample.id", ascending = True)
 
 
-print(f"""
-dataset summary:
-training cohort = TransNEO (n = {resp_pCR_train.size})
-validation cohort (sc) = Zhang TNBC 2021 (n = {resp_PR_test['Patient.id'].nunique()}, nCells = {resp_PR_test.size})
-treatment = {use_samples + 'therapy'}, response = RECIST ('PR' vs not)
+print(f"""dataset summary:
+training cohort = TransNEO (n = {resp_pCR_train.size:,})
+validation cohort (SC) = Zhang TNBC 2021 (n = {resp_PR_test['Patient.id'].nunique():,}, nCells = {resp_PR_test.size:,})
+treatment = {use_samples + 'therapy'}, response = RECIST ('CR'/'PR' vs. 'SD'/'PD')
 available cell types = {cell_types}
 """)
 
@@ -110,19 +120,21 @@ available cell types = {cell_types}
 #%% prepare data.
 
 conf_th = 0.99                                                                 # confident gene cut-off for decon
-sc_th   = 0.80                                                                 # gene variance cut-off for sc
-# print(f"sc_th = {sc_th}")
+var_top = 3500                                                                 # #highly-variable-genes for sc
 genes, X_all_train, X_all_test = { }, { }, { }
 for ctp_ in tqdm(cell_types):
     ## get genes to use.
-    try:
-        gn_ctp_ = np.intersect1d(
-            get_conf_genes(conf_score_train[ctp_], th = conf_th), 
-            get_var_genes(exp_all_sc_test[ctp_], th = sc_th)).tolist()
-    except:
+    try:                                                                       # cell types
+        gn_ctp_ = exp_all_sc_test[ctp_].filter(
+            items = get_conf_genes(conf_score_train[ctp_], th = conf_th), 
+            axis = 0).var(
+            axis = 1).sort_values(
+            ascending = False).iloc[
+            :var_top].index.tolist()
+    except:                                                                    # bulk
         gn_ctp_ = np.intersect1d(
             conf_score_train.index, 
-            get_var_genes(exp_all_sc_test[ctp_], th = sc_th)).tolist()
+            exp_all_sc_test[ctp_].index).tolist()
     
     ## get expression data.
     if ctp_ != "Bulk":
@@ -131,15 +143,19 @@ for ctp_ in tqdm(cell_types):
         for smpl_ in samples_test:
             try:
                 cells_smpl_ = cells_ctp_test_.get_group(smpl_)["Cell.id"]
-                exp_smpl_   = exp_all_sc_test[ctp_][cells_smpl_].mean(axis = 1)
-                X_ctp_test_[smpl_] = exp_smpl_[gn_ctp_]
+                if len(cells_smpl_) >= 3:                                      # need to have 3+ cells per sample
+                    exp_smpl_ = exp_all_sc_test[ctp_][cells_smpl_].mean(
+                        axis = 1)
+                    X_ctp_test_[smpl_] = exp_smpl_[gn_ctp_]
             except:                                                            # cell type not present in this sample
                 continue
         X_ctp_test_ = pd.DataFrame(X_ctp_test_).T
     else:
         X_ctp_test_ = exp_all_sc_test[ctp_].loc[gn_ctp_, samples_test].T
+    X_ctp_test_.rename(columns = lambda gn: f"{gn}__{ctp_}", inplace = True)
     
-    X_ctp_train_ = exp_all_train[ctp_].loc[gn_ctp_, samples_train].T
+    X_ctp_train_ = exp_all_train[ctp_].loc[gn_ctp_, samples_train].T.rename(
+        columns  = lambda gn: f"{gn}__{ctp_}")
     
     ## save data.
     genes[ctp_], X_all_train[ctp_], X_all_test[ctp_] = \
@@ -194,13 +210,16 @@ tune_seed = 84
 cv_seed   = 4
 
 
-#%% model per cell type.
+#%% model per cell type/combo.
+
+filterwarnings(action = "ignore")                                              # suppress fit failing/convergence warnings
+
 
 ## get parameters.
 num_split_rep   = 5
 num_splits      = 3
 stratify_splits = False
-use_mets        = ["AUC", "AP"]                                                # list of performance metrics to use
+use_mets        = ["AUC", "AP", "ACC", "DOR", "SEN", "PPV", "SPC"]               # list of performance metrics to use
 
 
 _tic = tic()
@@ -313,6 +332,17 @@ y_pred_val    = pd.DataFrame(y_pred_val)                                       #
 th_test_val   = pd.DataFrame(th_test_val).T
 perf_test_val = pd.DataFrame(perf_test_val).T
 
+
+## check R vs. NR score difference.
+y_pred_diff = pd.DataFrame({
+    ctp_: mannwhitneyu(y_pred_[y_test.eq(1)], y_pred_[y_test.eq(0)], 
+                       alternative = "greater", nan_policy = "omit") 
+    for ctp_, y_pred_ in y_pred_val.items()}, index = ["U1", "pval"]).T
+y_pred_diff["pval_sig"] = y_pred_diff.pval.map(
+    lambda p: ("***" if (p <= 0.001) else "**" if (p <= 0.01) else 
+               "*" if (p <= 0.05) else "ns"))
+
+
 # print(os.system("clear"))                                                    # clears console
 print(f"""\n{'-' * 64}
 validation performance for treatment = {use_samples}:
@@ -324,26 +354,31 @@ _tic.toc()
 
 #%% save full prediction & performance tables.
 
-svdat = False                                                                  # set True to save results 
+svdat = False
 
 if svdat:
     datestamp = date_time()
     
     ## save full predictions & performance.
     out_path = data_path[0] + "mdl_data/"
-    out_file = f"zhangTNBC2021_predictions_{use_samples}_th{conf_th}_{use_mdl}_{num_feat_max}features_{num_splits}foldCVtune_{datestamp}.pkl"
-    out_dict = {"label": y_all_test, "pred": y_pred_val, 
-                "th": th_test_val,   "perf": perf_test_val}
-    
     os.makedirs(out_path, exist_ok = True)                                     # creates output dir if it doesn't exist
+    
+    out_file = f"zhangTNBC2021_predictions_{use_samples}_th{conf_th}_top{var_top}_{use_mdl}_{num_feat_max}features_{num_splits}foldCVtune_{datestamp}.pkl"
+    out_dict = {"label": y_all_test,  "pred": y_pred_val, 
+                "th"   : th_test_val, "perf": perf_test_val}
+    
     with open(out_path + out_file, "wb") as file:
         pickle.dump(out_dict, file)
-
+    print(out_file)
+    
+    
     ## save complete performance into xlsx file.
     out_path = _wpath_ + "results/"
-    out_file = f"zhangTNBC2021_results_{use_samples}_th{conf_th}_{use_mdl}_{num_feat_max}features_{num_splits}foldCVtune_{datestamp}.xlsx"
+    os.makedirs(out_path, exist_ok = True)                                     # creates output dir if it doesn't exist
+    
+    out_file = f"zhangTNBC2021_results_{use_samples}_th{conf_th}_top{var_top}_{use_mdl}_{num_feat_max}features_{num_splits}foldCVtune_{datestamp}.xlsx"
     out_dict = perf_test_val.copy()
     
-    os.makedirs(out_path, exist_ok = True)                                     # creates output dir if it doesn't exist
     write_xlsx(out_path + out_file, out_dict)
-
+    print(out_file)
+    

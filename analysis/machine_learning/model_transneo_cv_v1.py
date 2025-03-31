@@ -6,23 +6,28 @@ Created on Sun Mar 19 22:15:35 2023
 @author: dhrubas2
 """
 
-## set up necessary directories/paths.
-_wpath_ = "/Users/dhrubas2/OneDrive - National Institutes of Health/Projects/TMEcontribution/analysis/submission/Code/analysis/"
-_mpath_ = "miscellaneous/py/"
-
-## load necessary packages.
 import os, sys
-sys.path.append(_wpath_);       os.chdir(_wpath_)                              # current path
+if sys.platform == "darwin":                                                   # mac
+    _mpath_ = "/Users/dhrubas2/OneDrive - National Institutes of Health/miscellaneous/py/"
+    _wpath_ = "/Users/dhrubas2/OneDrive - National Institutes of Health/Projects/TMEcontribution/analysis/analysis_final/"
+elif sys.platform == "linux":                                                  # biowulf
+    _mpath_ = "/home/dhrubas2/vivid/"
+    _wpath_ = "/data/Lab_ruppin/projects/TME_contribution_project/analysis/analysis_final/"
+
+os.chdir(_wpath_)                                                              # current path
 if _mpath_ not in sys.path:
     sys.path.append(_mpath_)                                                   # to load miscellaneous
 
 import numpy as np, pandas as pd, pickle
+# from argparse import ArgumentParser
 from miscellaneous import date_time, tic, write_xlsx
-from itertools import combinations
-from machine_learning._functions import (
-    EnsembleClassifier, train_pipeline, predict_proba_scaled, 
-    get_best_threshold, classifier_performance, binary_performance)
+# from itertools import combinations
+from _functions import (MakeClassifier, EnsembleClassifier, train_pipeline, 
+                        predict_proba_scaled, get_best_threshold, 
+                        classifier_performance, binary_performance)
 from sklearn.model_selection import StratifiedKFold
+# from sklearnex import patch_sklearn, unpatch_sklearn
+# patch_sklearn()
 
 
 #%% functions.
@@ -36,11 +41,13 @@ def get_conf_genes(conf, th = 0.99):
 #%% read data.
 
 ## specify sample subset.
+# use_samples = "all"
+# use_samples = "chemo+targeted"
 use_samples = "chemo"
 use_samples = use_samples.replace("+", "_")
 
 ## load data.
-data_path = "../data/TransNEO/transneo_analysis/"
+data_path = "../../data/TransNEO/transneo_analysis/"
 data_file = f"transneo_data_{use_samples}_v2.pkl"
 with open(data_path + data_file, "rb") as file:
     data_obj   = pickle.load(file)
@@ -55,6 +62,13 @@ if conf_score.columns.tolist() == cell_frac.columns.tolist():
     cell_types = conf_score.columns.tolist()
 else:
     raise ValueError("cell types are not the same between cell fraction and confidence score matrices!")
+
+
+# samples_keep = clin_info[(clin_info["ER.status"] == "NEG") & 
+#                          (clin_info["HER2.status"] == "NEG")].index.tolist()
+# exp_all      = {ctp_: exp_[samples_keep] for ctp_, exp_ in exp_all.items()}
+# resp_pCR     = resp_pCR[samples_keep]
+# cell_frac    = cell_frac.loc[samples_keep]
 
 
 #%%  prepare data for modeling.
@@ -86,15 +100,22 @@ confidence cut-off = {conf_th}
 ## input: individual cell type / combo.
 # use_ctp = "Bulk"                                                               # one individual cell type
 # use_ctp = ["Cancer_Epithelial", "Endothelial"]                                 # two individual cell types
+# use_ctp = ["Cancer_Epithelial", "Endothelial", "Myeloid", 
+#            "Plasmablasts", "Bulk"]                                             # top cell types: chemo
+# use_ctp = ["PVL", "B-cells", "Myeloid", "Bulk"]                                # top cell types: chemo + targeted
 
 # use_ctp = ("B-cells", "Myeloid")                                               # B-M ensemble (input as tuple)
-# use_ctp = ("B-cells", "Myeloid", "T-cells")                                    # B-M-T ensemble (input as tuple)
+# use_ctp = ("B-cells", "Myeloid", "PVL")
+# use_ctp = ("B-cells", "Myeloid", "Endothelial")
+# use_ctp = ("B-cells", "Myeloid", "Endothelial", "PVL")
+# use_ctp = ("B-cells", "Myeloid", "T-cells")
 # use_ctp = "all"                                                                # all cell type ensemble
 
 ## input: list of individual cell types / combos.
 use_ctp = np.append(cell_types, "Bulk").tolist()                               # all individual cell types + Bulk 
 # use_ctp = list(combinations(cell_types, r = 2))                                # all two-cell-type ensembles 
-# use_ctp = list(combinations(cell_types, r = 3))                                # all three-cell-type ensembles 
+# top_ctp = ["Cancer_Epithelial", "Endothelial", "Myeloid", "Plasmablasts"]
+# use_ctp = list(combinations(top_ctp, r = 2)) + [("Bulk", )]                    # two-cell-type ensembles for top cell types
 
 ## format ctp parameter as [(ctp1), (ctp2), ...].
 if isinstance(use_ctp, list):
@@ -130,6 +151,8 @@ cv_tune   = StratifiedKFold(n_splits = 3, shuffle = True,
 
 
 #%% model response per classifier.
+
+svdat = False
 
 ## get parameters.
 num_split_rep = 5
@@ -191,7 +214,8 @@ for use_ctp_ in use_ctp:
                         tune_seed = tune_seed)
                 
                 ## step II: get ensemble model.
-                pipe_tuned = EnsembleClassifier(models = list(pipes_mdl.values()))
+                pipe_tuned = EnsembleClassifier(
+                    models = list(pipes_mdl.values()))
                 pipe_tuned.fit(X_train, y_train)
                 params_tuned = params_mdl.copy()
             
@@ -209,7 +233,28 @@ for use_ctp_ in use_ctp:
             y_pred_split.iloc[test_idx]          = y_pred[:, 1]
             th_test_split[f"split{use_split}"]   = th_fit
             perf_test_split[f"split{use_split}"] = perf_test[use_mets]
-                    
+            
+            
+            ## save data for this split, repetition & cell type.
+            if svdat:
+                datestamp = date_time()
+                out_path  = data_path + f"split{use_split}/{datestamp}/"
+                if not os.path.exists(out_path):                               # create output dir
+                    os.mkdir(out_path)
+                
+                out_file = f"transneo_{use_samples}_{'+'.join(use_ctp_)}_th{conf_th}_{use_mdl}_{num_feat_max}features_split{use_split}_seed{use_seed}_{datestamp}.pkl"
+                
+                out_dict = {"pipe_fitted": pipe_tuned, 
+                            "params_tuned": params_tuned, 
+                            "mdl_data": {"y_train": y_train, "y_test": y_test, 
+                                         "y_pred": pd.DataFrame(
+                                             y_pred, index = y_test.index), 
+                                         "th_test": th_fit}, 
+                            "perf_test": perf_test}
+                with open(out_path + out_file, "wb") as file:
+                    pickle.dump(out_dict, file)
+            ####
+        
         
         ## save results for this repetition.
         perf_test_split = pd.DataFrame(perf_test_split)
@@ -269,20 +314,27 @@ treatment = {use_samples}
 cohort = TransNEO (n = {y_all.size})
 {perf_test_ctp_full.round(4)}""")
 
+# print(f"""\n{'-' * 64}
+# final overall performance for treatment = {use_samples} - cell types ranked by mean(AUC, AP):\n
+# {perf_test_ctp_full.loc[perf_test_ctp_full[["AUC", "AP"]].mean(
+#     axis = 1).sort_values(ascending = False).index].round(4)}""")
+
 
 _tic.toc()
 
 
 #%% save full prediction & performance tables.
 
-svdat = False                                                                  # set True to save results 
+svdat = False
 
 if svdat:
     datestamp = date_time()
+    # datestamp = "20Mar2023"
     
     ## save full predictions & performance.
     out_path = data_path + "mdl_data/"
-    os.makedirs(out_path, exist_ok = True)                                     # creates output dir if doesn't exist 
+    if not os.path.exists(out_path):                                           # create output dir
+        os.mkdir(out_path)
     
     out_file = f"transneo_predictions_{use_samples}_th{conf_th}_{use_mdl}_{num_feat_max}features_{num_splits}foldCV_{datestamp}.pkl"
     out_dict = {"label": y_all,         "pred": y_pred_ctp_full, 
@@ -293,9 +345,14 @@ if svdat:
 
     ## save complete performance into xlsx file.
     out_path = _wpath_ + "results/"
-    os.makedirs(out_path, exist_ok = True)                                     # creates output dir if doesn't exist 
+    if not os.path.exists(out_path):                                           # create output dir
+        os.mkdir(out_path)
     
     out_file = f"transneo_results_{use_samples}_th{conf_th}_{use_mdl}_{num_feat_max}features_{num_splits}foldCV_{datestamp}.xlsx"
     out_dict = perf_test_ctp.copy()
     write_xlsx(out_path + out_file, out_dict)
+
+
+
+
 

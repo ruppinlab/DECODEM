@@ -6,21 +6,26 @@ Created on Mon Mar 27 20:11:57 2023
 @author: dhrubas2
 """
 
-## set up necessary directories/paths.
-_wpath_ = "/Users/dhrubas2/OneDrive - National Institutes of Health/Projects/TMEcontribution/analysis/submission/Code/analysis/"
-_mpath_ = "miscellaneous/py/"
-
-## load necessary packages.
 import os, sys
-sys.path.append(_wpath_);       os.chdir(_wpath_)                              # current path
+if sys.platform == "darwin":                                                   # mac
+    _mpath_ = "/Users/dhrubas2/OneDrive - National Institutes of Health/miscellaneous/py/"
+    _wpath_ = "/Users/dhrubas2/OneDrive - National Institutes of Health/Projects/TMEcontribution/analysis/analysis_final/"
+elif sys.platform == "linux":                                                  # biowulf
+    _mpath_ = "/home/dhrubas2/vivid/"
+    _wpath_ = "/data/Lab_ruppin/projects/TME_contribution_project/analysis/analysis_final/"
+
+os.chdir(_wpath_)                                                              # current path
 if _mpath_ not in sys.path:
     sys.path.append(_mpath_)                                                   # to load miscellaneous
 
 import numpy as np, pandas as pd, pickle
+import matplotlib as mpl, matplotlib.pyplot as plt, seaborn as sns
+# from argparse import ArgumentParser
 from miscellaneous import date_time, tic, write_xlsx
-from machine_learning._functions import (
-    EnsembleClassifier, train_pipeline, predict_proba_scaled, 
-    get_best_threshold, classifier_performance, binary_performance)
+from _functions import (MakeClassifier, EnsembleClassifier, train_pipeline, 
+                        predict_proba_scaled, get_best_threshold, 
+                        classifier_performance, binary_performance, 
+                        make_performance_plot)
 from sklearn.model_selection import StratifiedKFold, KFold
 from scipy.stats import fisher_exact
 from tqdm import tqdm
@@ -67,7 +72,7 @@ def get_feature_importance(pipe, scale = True):
         pipe["var_filter"].get_support()][pipe["selector"].get_support()]
     featimps  = pd.Series(featimps, index = featnames, name = "MDI")
     if scale:
-        featimps = featimps / featimps.max()                                   # rescale between [0, 1] 
+        featimps = featimps / featimps.max()
     
     return featimps    
 
@@ -94,8 +99,8 @@ def get_feature_association(data, featlist = None, alternative = "two-sided"):
 
 use_samples = "chemo"
 
-data_path = ["../data/TransNEO/transneo_analysis/", 
-             "../data/BrighTNess/validation/"]
+data_path = ["../../data/TransNEO/transneo_analysis/", 
+             "../../data/BrighTNess/validation/"]
 
 data_file = [f"transneo_lirics_data_{use_samples}_v3.pkl", 
              f"brightness_lirics_data_{use_samples}.pkl"]
@@ -146,15 +151,26 @@ if cclr_all_test["all"].index.tolist() != cci_all_test["all"].index.tolist():
 #%% prepare data.
 
 ## filter CCIs for cell types & genes to use.
-top_ctps = ["Cancer_Epithelial", "Endothelial", "Myeloid", "Plasmablasts"]
-# top_ctps = ["B-cells", "Myeloid", "T-cells"]                                   # for sc validation - cell types present in Zhang et al.
+top_ctps = {
+    "all": ["B-cells", "Myeloid", "Plasmablasts"], 
+    "chemo_targeted": ["PVL", "B-cells", "Myeloid"], 
+    "chemo": ["Cancer_Epithelial", "Endothelial", "Myeloid", "Plasmablasts"] }
+    # "chemo": ["B-cells", "Myeloid", "T-cells"] }                               # for sc validation - cell types present in Zhang et al.
 
 filter_cci = True
 if filter_cci:
     conf_th = 0.99                                                             # confident gene cut-off
     filter_by  = "both"                                                        # "both" / "cell" / "gene": what to filter by
     join_genes = "any"                                                         # "any" / "all": union / intersection of confident genesets
-    use_ctps = top_ctps
+        
+    # use_ctps = ["Endothelial", "Myeloid", "Plasmablasts"]
+    # use_ctps = ["Cancer_Epithelial", "B-cells", "Myeloid", "T-cells"]
+    # use_ctps = ["Cancer_Epithelial", "B-cells", "Myeloid", "T-cells", 
+    #             "Plasmablasts"]
+    # use_ctps = ["Cancer_Epithelial", "Myeloid", "PVL"]
+    # use_ctps = ["Cancer_Epithelial", "Endothelial", "Myeloid", "Plasmablasts", 
+    #             "B-cells", "Normal_Epithelial"]
+    use_ctps = top_ctps[use_samples]
     use_genes = np.intersect1d(
         get_conf_genes(conf_score_train, th = conf_th, ctps = use_ctps, 
                        join = join_genes.lower()), 
@@ -183,7 +199,18 @@ for cclr_ in cclr_all_train:
 del cclr_lr_, X_train_cclr_, X_test_cclr_
 
 
-#%% modeling parameters.
+#%% model response per classifer.
+
+## dataset options.
+## arm B: paclitaxel + carboplatin (TC), arm C: paclitaxel (T).
+use_arm = "B"                                                                  # use None for both arms
+if use_arm is not None:
+    arm_samples = clin_info_test[
+        clin_info_test["planned_arm_code"] == use_arm.upper()].index.tolist()
+    X_all_test = {
+        cclr_: X_.loc[arm_samples] for cclr_, X_ in X_all_test.items()}
+    y_test     = y_test.loc[arm_samples]
+
 
 ## model parameters.
 num_feat_max = "all"                                                           # maximum #features to use
@@ -210,25 +237,11 @@ cv_tune   = StratifiedKFold(n_splits = 3, shuffle = True,
                             random_state = cv_seed)
 
 
-#%% model per CCI list.
-
-## dataset options.
-## arm B: paclitaxel + carboplatin (TC), arm C: paclitaxel (T).
-use_arm = "B"                                                                  # use None for both arms
-if use_arm is not None:
-    arm_samples = clin_info_test[
-        clin_info_test["planned_arm_code"] == use_arm.upper()].index.tolist()
-    X_all_test = {
-        cclr_: X_.loc[arm_samples] for cclr_, X_ in X_all_test.items()}
-    y_test     = y_test.loc[arm_samples]
-
-## get parameters.
-# use_cclr        = ["ramilowski", "wang", "all"]                                # all ligand-receptor lists
-use_cclr        = ["ramilowski"]
-num_split_rep   = 5
-num_splits      = 3
-stratify_splits = False
-use_mets        = ["AUC", "AP", "ACC", "DOR", "SEN", "PPV", "SPC"]             # list of performance metrics to use
+## get other parameters.
+use_cclr      = ["ramilowski", "wang", "all"]                                  # all ligand-receptor lists
+num_split_rep = 5
+num_splits    = 3
+use_mets      = ["AUC", "AP", "ACC", "DOR", "SEN", "PPV", "SPC"]               # list of performance metrics to use
 
 
 _tic = tic()
@@ -254,12 +267,10 @@ for use_cclr_ in use_cclr:
         print(f"\nsplit seed = {use_seed}")
         
         ## make cv splits for tuning.
-        if stratify_splits:
-            cv_tune = StratifiedKFold(n_splits = num_splits, shuffle = True, 
-                                      random_state = use_seed)
-        else:
-            cv_tune = KFold(n_splits = num_splits, shuffle = True, 
-                            random_state = use_seed)
+        # cv_tune = StratifiedKFold(n_splits = num_splits, shuffle = True, 
+        #                           random_state = use_seed)
+        cv_tune = KFold(n_splits = num_splits, shuffle = True, 
+                        random_state = use_seed)
         
         ## train model.
         try:                                                                   # individual classifier
@@ -342,6 +353,17 @@ th_test_val   = pd.DataFrame(th_test_val).T
 perf_test_val = pd.DataFrame(perf_test_val).T
 
 
+## performance for ensemble model.
+y_pred_val["ensemble"] = y_pred_val[use_cclr[:-1]].mean(axis = 1)
+th_mean_val            = th_test_val.drop(index = "all")["mean"].mean()
+y_pred_val_ens_th      = y_pred_val["ensemble"].ge(th_mean_val).astype(int)
+perf_test_val_ens      = pd.concat([
+    pd.Series(classifier_performance(y_test, y_pred_val["ensemble"])), 
+    pd.Series(binary_performance(y_test, y_pred_val_ens_th)) ])
+perf_test_val.loc["ensemble"] = perf_test_val_ens[use_mets]
+
+del th_mean_val, y_pred_val_ens_th, perf_test_val_ens
+
 # print(os.system("clear"))                                                      # clears console
 print(f"""\n{'-' * 64}
 validation performance for treatment = {use_samples}:
@@ -356,10 +378,12 @@ _tic.toc()
 
 #%% save full prediction & performance tables.
 
-svdat = False                                                                  # set True to save results 
+svdat = False
 
 if svdat:
-    datestamp = date_time()
+    # datestamp = date_time()
+    datestamp = "25Mar2023"
+    # datestamp = "14Aug2023"
     
     ## save full predictions & performance.
     out_path = data_path[0] + "mdl_data/"
@@ -395,20 +419,16 @@ if svdat:
     write_xlsx(out_path + out_file, out_dict)    
     
 
-#%% get feature importance.
-## RF: mean decrease in impurit (MDI), permutation-based importance
-## default: MDI; accumulation of the gini impurity decrease within each tree
+#%% compute feature importance.
 
-svdat = False                                                                  # set True to save results 
+svdat = False
 
-## parameters.
 cclr      = "ramilowski"
 pipes_all = pipes_test_val[cclr]
 
 na_th  = 0.6                                                                   # NA fractions to allow for a feature
 imp_th = 1e-3                                                                  # importance threshold for keeping a feature
 
-## compute feature importance.
 featimp_all = pd.DataFrame({sd_: get_feature_importance(pipe_, scale = True) \
                             for sd_, pipe_ in pipes_all.items()})
 featimp_all.dropna(thresh = na_th * len(pipes_all), inplace = True)
@@ -417,7 +437,7 @@ featimp_all.sort_values(by = "mean", ascending = False, inplace = True)
 featimp_all[["OR", "pval"]] = get_feature_association(
     data = (X_train, y_train), featlist = featimp_all.index)
 featimp_all["pval_signed"] = featimp_all[["OR", "pval"]].apply(
-    lambda res: res.iloc[1] * (1 if (res.iloc[0] > 1.0) else -1), axis = 1)
+    lambda res: res[1] * (1 if (res[0] > 1.0) else -1), axis = 1)
 
 
 ## finalize feature importance.
@@ -439,14 +459,13 @@ featimp_final = featimp_final.set_index("CCIannot")[[
     "LigandCell", "ReceptorCell", "LigandGene", "ReceptorGene", 
     "MDI", "Direction"]]
 
-
-n_top = 20
-print(f"\ntop {n_top} most predictive CCIs for BrighTNess cohort = \n{featimp_final.iloc[:n_top, -2:]}")
+print(f"\ntop 20 most predictive CCIs for BrighTNess cohort = \n{featimp_final.iloc[:20, -2:]}")
 
 
 ## save data.
 if svdat:
-    datestamp = date_time()
+    # datestamp = date_time()
+    datestamp = "25Mar2023"
     out_path  = data_path[0] + "mdl_data/"
     out_file  = f"brightness_lirics_feature_importance_{use_samples}_{use_mdl}_{num_feat_max}features_{num_splits}foldCV_{datestamp}.xlsx"
     out_file  = out_file.replace(f"_{use_mdl}", 
@@ -457,3 +476,139 @@ if svdat:
     os.makedirs(out_path, exist_ok = True)                                     # creates output dir if it doesn't exist
     write_xlsx(out_path + out_file, out_dict)
 
+
+#%% make feature importance plot.
+
+svdat = False
+
+fontname = "sans"
+fontdict = {"label": dict(fontfamily = fontname, fontsize = 48, 
+                          fontweight = "regular"), 
+            "title": dict(fontfamily = fontname, fontsize = 52, 
+                          fontweight = "semibold"), 
+            "super": dict(fontfamily = fontname, fontsize = 56, 
+                          fontweight = "bold")}
+
+num_disp = 10                                                                  # plot top features
+fig_data = featimp_final.reset_index()[:num_disp]
+fig_data.replace(regex = {"CCIannot": {"-": " $-$ ", "_": " ", "::": " :: "}}, 
+                 inplace = True)
+
+
+plt_type = "line"                                                              # bar / line : barplot / lollipop plot
+plt_clr  = ["#75D0A6", "#EED5B8"]                                              # plot colors 
+offset   = 0.015                                                               # offset between line and marker for lollipop plot
+
+fig2, ax2 = plt.subplots(figsize = (24, 18), nrows = 1, ncols = 1)
+if plt_type == "bar":
+    sns.barplot(data = fig_data, x = "MDI", y = "CCIannot", orient = "h", 
+                color = plt_clr[0], edgecolor = [0.3]*3, saturation = 0.9, 
+                dodge = True, ax = ax2)
+elif plt_type == "line":
+    ax2.hlines(y = fig_data["CCIannot"], xmin = 0, 
+               xmax = fig_data["MDI"] - offset, color = plt_clr[1], 
+               linestyle = "-", linewidth = 14);
+    
+    sns.scatterplot(data = fig_data, x = "MDI", y = "CCIannot", 
+                    markers = True, color = plt_clr[0], s = 1000, ax = ax2);
+
+ax2.set_xlabel("Mean decrease in impurity", **fontdict["label"]);
+ax2.set_ylabel(None);    ax2.set_xlim([0, 1]);
+ax2.set_yticks(ticks = range(num_disp), labels = fig_data["CCIannot"], 
+              **fontdict["label"]);
+ax2.tick_params(axis = "both", which = "major", 
+                labelsize = fontdict["label"]["fontsize"]);
+# ax2.set_title(f"Top predictive cell-cell interactions (n = {num_disp})", 
+#               **fontdict["title"]);
+ax2.set_title("BrighTNess", **fontdict["title"]);
+
+fig2.tight_layout()
+plt.show()
+
+
+## save figure.
+if svdat:
+    # datestamp = date_time()
+    datestamp = "27Mar2023"
+    
+    ## figures for all cell types.
+    fig_path = data_path[0] + "plots/final_plots3/"
+    fig_file = f"brightness_lirics_{use_samples}_feature_importance_{plt_type}plot_CCI_{use_mdl}_{num_feat_max}features_{datestamp}.pdf"
+    fig_file = fig_file.replace("CCI_", 
+                     f"filteredCCI_th{conf_th}_" if filter_cci else "allCCI_")
+    
+    os.makedirs(fig_path, exist_ok = True)                                     # creates figure dir if it doesn't exist
+    fig2.savefig(fig_path + fig_file, dpi = "figure")
+
+
+#%% make ROC/PR curve plots.
+
+svdat = False
+
+fontname = "sans"
+fontdict = {"label": dict(fontfamily = fontname, fontsize = 30, 
+                          fontweight = "regular"), 
+            "title": dict(fontfamily = fontname, fontsize = 34, 
+                          fontweight = "semibold"), 
+            "super": dict(fontfamily = fontname, fontsize = 38, 
+                          fontweight = "bold")}
+
+
+## get bulk prediction data.
+bulk_path = data_path[0] + "mdl_data/"
+bulk_file = "brightness_predictions_chemo_th0.99_ENS2_25features_3foldCVtune_23Mar2023.pkl"
+
+with open(bulk_path + bulk_file, "rb") as file:
+    data_obj          = pickle.load(file)
+    y_test_val        = data_obj["label"]
+    y_pred_ctp_val    = data_obj["pred"]
+    th_test_ctp_val   = data_obj["th"]
+    perf_test_ctp_val = data_obj["perf"]
+    del data_obj
+
+y_pred_plt_bulk = y_pred_ctp_val["Bulk"]
+
+
+## get CCI prediction data.
+cclr = "ramilowski"
+y_pred_plt_val = y_pred_val[cclr]
+y_preds = {"LRI": y_pred_plt_val, "Bulk": y_pred_plt_bulk}
+
+
+## make performance plots.
+fig_title1 = "Performance of cell-cell interaction based model"
+if use_samples == "all":
+    fig_title1 += " for the whole BrighTNess cohort, Arm B "
+elif use_samples == "chemo_targeted":
+    fig_title1 += " for HER2+ patients\ntreated with chemotherapy and Trastuzumab in BrighTNess cohort, Arm B "
+elif use_samples == "chemo":
+    fig_title1 += " for HER2- patients\ntreated with chemotherapy alone in BrighTNess cohort, Arm B "
+fig_title1 += f"(n = {y_test.size})"
+
+# mpl.style.use("ggplot")
+fig1, (ax11, ax12) = plt.subplots(figsize = (28, 16), nrows = 1, ncols = 2)
+ax11 = make_performance_plot(
+    y_test, y_preds, curve = "ROC", ax = ax11, fontdict = fontdict)
+ax12 = make_performance_plot(
+    y_test, y_preds, curve = "PR", ax = ax12, fontdict = fontdict)
+fig1.suptitle(fig_title1, y = 0.98, **fontdict["super"]);
+
+fig1.tight_layout()
+plt.show()
+
+
+## save figures.
+if svdat:
+    # datestamp = date_time()
+    datestamp = "27Mar2023"
+    
+    ## figures for all cell types.
+    fig_path = data_path[0] + "plots/final_plots2/"
+    if not os.path.exists(fig_path):                                           # create figure dir
+        os.mkdir(fig_path)
+    
+    fig_file = f"brightness_lirics_{use_samples}_AUC_AP_bulk_CCI_{use_mdl}_{num_feat_max}features_{datestamp}.pdf"
+    fig_file = fig_file.replace("CCI_", 
+                     f"filteredCCI_th{conf_th}_" if filter_cci else "allCCI_")
+    fig1.savefig(fig_path + fig_file, dpi = "figure")
+    

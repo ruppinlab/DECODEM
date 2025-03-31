@@ -6,24 +6,30 @@ Created on Tue Mar 21 14:55:04 2023
 @author: dhrubas2
 """
 
-## set up necessary directories/paths.
-_wpath_ = "/Users/dhrubas2/OneDrive - National Institutes of Health/Projects/TMEcontribution/analysis/submission/Code/analysis/"
-_mpath_ = "miscellaneous/py/"
-
-## load necessary packages.
 import os, sys
-sys.path.append(_wpath_);       os.chdir(_wpath_)                              # current path
+if sys.platform == "darwin":                                                   # mac
+    _mpath_ = "/Users/dhrubas2/OneDrive - National Institutes of Health/miscellaneous/py/"
+    _wpath_ = "/Users/dhrubas2/OneDrive - National Institutes of Health/Projects/TMEcontribution/analysis/analysis_final/"
+elif sys.platform == "linux":                                                  # biowulf
+    _mpath_ = "/home/dhrubas2/vivid/"
+    _wpath_ = "/data/Lab_ruppin/projects/TME_contribution_project/analysis/analysis_final/"
+
+os.chdir(_wpath_)                                                              # current path
 if _mpath_ not in sys.path:
     sys.path.append(_mpath_)                                                   # to load miscellaneous
 
 import numpy as np, pandas as pd, pickle
+import matplotlib.pyplot as plt, seaborn as sns
+# from argparse import ArgumentParser
 from miscellaneous import date_time, tic, write_xlsx
 from itertools import combinations
 from functools import reduce
 from operator import add
-from machine_learning._functions import (
-    EnsembleClassifier, train_pipeline, predict_proba_scaled, 
-    get_best_threshold, classifier_performance, binary_performance)
+from _functions import (MakeClassifier, EnsembleClassifier, train_pipeline, 
+                        predict_proba_scaled, get_best_threshold, 
+                        classifier_performance, binary_performance, 
+                        make_barplot1, make_barplot2)
+# from sklearn.preprocessing import MinMaxScaler
 from sklearn.model_selection import StratifiedKFold, KFold
 
 
@@ -39,8 +45,8 @@ def get_conf_genes(conf, th = 0.99):
 
 use_samples = "chemo"
 
-data_path = ["../data/TransNEO/transneo_analysis/", 
-             "../data/BrighTNess/validation/"]
+data_path = ["../../data/TransNEO/transneo_analysis/", 
+             "../../data/BrighTNess/validation/"]
 
 data_file = [f"transneo_data_{use_samples}_v2.pkl", 
              f"brightness_data_{use_samples}_v2.pkl"]
@@ -69,6 +75,14 @@ if conf_score_train.columns.tolist() == conf_score_test.columns.tolist():
     cell_types = conf_score_train.columns.tolist()
 else:
     raise ValueError("the cell types are not the same between training and test datasets!")
+
+
+# samples_keep = clin_info_train[
+#     (clin_info_train["ER.status"] == "NEG") & 
+#     (clin_info_train["HER2.status"] == "NEG")].index.tolist()
+# exp_all_train      = {ctp_: exp_[samples_keep] for ctp_, exp_ in exp_all_train.items()}
+# resp_pCR_train     = resp_pCR_train[samples_keep]
+# cell_frac_train    = cell_frac_train.loc[samples_keep]
 
 
 #%% prepare data.
@@ -106,19 +120,27 @@ y_test  = resp_pCR_test.loc[X_all_test["Bulk"].index].copy()
 #%% modeling parameters.
 
 ## input: cell types - individual / combo.
-top_cell_types = ["Cancer_Epithelial", "Endothelial", "Myeloid", 
-                  "Plasmablasts", "B-cells", "Normal_Epithelial"]
 use_ctp = np.append(cell_types, "Bulk").tolist()                               # all individual cell types + Bulk 
 # use_ctp = list(combinations(cell_types, r = 2))                                # all two-cell-type ensembles 
 # use_ctp = list(combinations(cell_types, r = 3))                                # all three-cell-type ensembles 
-
-# ## top cell types + two-cell ensembles + three-cell ensembles.
+# use_ctp = [("B-cells", "Myeloid", "PVL"), ("all", ), ("Bulk", )]
+# use_ctp = [("Cancer_Epithelial", "Endothelial", "Myeloid", "Plasmablasts"), 
+#             ("all", ), ("Bulk", )]
+# use_ctp = ["all", "Bulk"]
+# use_ctp = [("Endothelial", "Myeloid", "Plasmablasts"), ("Myeloid", ), 
+#             ("Bulk", )]
+# use_ctp = [("Cancer_Epithelial", "Endothelial", "Myeloid", "Plasmablasts"), 
+#            ("Myeloid", ), ("Bulk", )]
+# 
+top_cell_types = ["Cancer_Epithelial", "Endothelial", "Myeloid", 
+                  "Plasmablasts", "B-cells", "Normal_Epithelial"]
 # use_ctp = list(combinations(cell_types, r = 1)) + \
 #             reduce(add, [list(combinations(top_cell_types, r)) \
 #                           for r in range(2, 4)]) + [("Bulk", )]
 
 # use_ctp = list(combinations(top_cell_types, r = 2)) + [("Bulk", )]
 # use_ctp = list(combinations(top_cell_types, r = 3)) + [("Bulk", )]
+# use_ctp = list(combinations(top_cell_types, r = 5)) + [("Bulk", )]
 
 ## format cell types list.
 if isinstance(use_ctp, list):
@@ -261,6 +283,8 @@ for use_ctp_ in use_ctp:
     
     ## combine prediction across all repetitions & get performance.
     y_pred_full    = y_pred_rep["mean"]
+    # y_pred_full    = MinMaxScaler().fit_transform(pd.DataFrame(
+    #     y_pred_rep["mean"])).squeeze()
     y_pred_th_full = (y_pred_full >= th_test_rep["mean"]).astype(int)
     perf_test_full = pd.concat([
         pd.Series(classifier_performance(y_test, y_pred_full)), 
@@ -300,10 +324,11 @@ _tic.toc()
 
 #%% save full prediction & performance tables.
 
-svdat = False                                                                  # set True to save results 
+svdat = False
 
 if svdat:
-    datestamp = date_time()
+    # datestamp = date_time()
+    datestamp = "23Mar2023"
     
     ## save full predictions & performance.
     out_path = data_path[0] + "mdl_data/"
@@ -311,7 +336,7 @@ if svdat:
     out_dict = {"label": y_test,   "pred": y_pred_val, 
                 "th": th_test_val, "perf": perf_test_val}
     
-    os.makedirs(out_path, exist_ok = True)                                     # creates output dir if it doesn't exist 
+    os.makedirs(out_path, exist_ok = True)                                     # creates output dir if it doesn't exist
     with open(out_path + out_file, "wb") as file:
         pickle.dump(out_dict, file)
     
@@ -330,6 +355,284 @@ if svdat:
     out_file = f"brightness_results_{use_samples}_th{conf_th}_{use_mdl}_{num_feat_max}features_{num_splits}foldCVtune_{datestamp}.xlsx"
     out_dict = perf_test_val.copy()
     
-    os.makedirs(out_path, exist_ok = True)                                     # creates output dir if it doesn't exist 
+    os.makedirs(out_path, exist_ok = True)                                     # creates output dir if it doesn't exist
     write_xlsx(out_path + out_file, out_dict)
 
+
+#%% load saved data.
+
+lddat = False
+
+if lddat:
+    res_path = data_path[0] + "mdl_data/"
+    res_file = "brightness_predictions_chemo_th0.99_ENS2_25features_3foldCVtune_23Mar2023.pkl"
+    with open(res_path + res_file, "rb") as file:
+        data_obj      = pickle.load(file)
+        y_test_val    = data_obj["label"]
+        y_pred_val    = data_obj["pred"]
+        th_test_val   = data_obj["th"]
+        perf_test_val = data_obj["perf"]
+        del data_obj
+    
+    assert np.all(
+        y_test[clin_info_test["planned_arm_code"] == "B"] == y_test_val)       # sanity check
+    
+    y_test = y_test[clin_info_test["planned_arm_code"] == "B"]
+    
+
+#%% plot parameters.
+
+fontname = "sans"
+fontdict = {"label": dict(fontfamily = fontname, fontsize = 48, 
+                          fontweight = "regular"), 
+            "title": dict(fontfamily = fontname, fontsize = 52, 
+                          fontweight = "semibold"), 
+            "super": dict(fontfamily = fontname, fontsize = 56, 
+                          fontweight = "bold")}
+
+## model ordering from cv analysis.
+ctp_abbv = dict(zip(cell_types, ["B", "CAFs", "CE", "ENDO", "MYL", "NE", 
+                                 "PB", "PVL", "T"]))
+mdl_top = perf_test_val[perf_test_val.AUC.gt(
+                perf_test_val.loc["Bulk", "AUC"])].index.tolist()              # cell-type-models that outperform Bulk
+
+keep_top = 3
+mdl_ord, mdl_names = ["Bulk"], ["Bulk"]
+for nn in range(3):
+    ## pick only 'nn+1' cell-type-ensembles by counting '+' and order by AUC.
+    mdl_nn_ = sorted([mdl_ for mdl_ in mdl_top if mdl_.count("+") == nn], 
+                     key = lambda mdl_: perf_test_val.loc[mdl_, "AUC"], 
+                     reverse = True)[:keep_top]
+    mdl_ord = mdl_nn_ + mdl_ord
+    
+    ## format cell type names (shorthand for ensembles).
+    if nn > 0:                                                                 # ensemble models
+        for ctp_, c_ in ctp_abbv.items():
+            mdl_nn_ = [mdl_.replace(ctp_, c_) for mdl_ in mdl_nn_]
+        mdl_nn_ = [mdl_.replace("+", "$-$") for mdl_ in mdl_nn_]
+    else:                                                                      # individual models
+        mdl_nn_ = [mdl_.replace("_", "\n") for mdl_ in mdl_nn_]
+    
+    mdl_names = mdl_nn_ + mdl_names
+del mdl_nn_
+
+
+## make base title.
+fig_title = "Performance of cell-type-specific models for TNBC patients " + \
+    f"treated with chemotherapy alone in BrighTNess cohort (n = {y_test.size})"
+
+
+#%% make combined AUC/AP barplots.
+
+svdat = False
+
+## make compact plot.
+fig_title1 = fig_title.replace("Performance", "Summary statistics").replace(
+    "in", "\nin")
+
+fig_data1 = perf_test_val.loc[mdl_ord, ["AUC", "AP"]].reset_index(
+    ).rename(columns = {"index": "model"}).melt(
+        id_vars = ["model"], var_name = "metric", value_name = "score")
+
+fig1, ax1 = plt.subplots(figsize = (40, 14), nrows = 1, ncols = 1)
+ax1 = make_barplot2(data = fig_data1, x = "model", y = "score", hue = "metric", 
+                    width = 0.5, title = "BrighTNess", xlabels = mdl_names, 
+                    xrot = 40, ax = ax1, fontdict = fontdict)
+ax1.set_ylim([0, 1.04]);
+fig1.tight_layout()
+plt.show()
+
+
+## save figure.
+if svdat:
+    # datestamp = date_time()
+    datestamp = "23Mar2023"
+    fig_path = data_path[0] + "plots/final_plots2/"
+    if not os.path.exists(fig_path):                                           # create figure dir
+        os.mkdir(fig_path)
+    
+    fig_file = f"brightness_{use_samples}_AUC_AP_top_models_th{conf_th}_{use_mdl}_{num_feat_max}features_{datestamp}_v2.pdf"
+    fig1.savefig(fig_path + fig_file, dpi = "figure")
+
+
+#%% make combined OR/SEN barplots.
+
+svdat = False
+
+## make plots for all cell types. 
+fig_data2 = perf_test_val.loc[mdl_ord, ["DOR", "SEN"]].reset_index(
+    ).rename(columns = {"index": "model"})
+
+## odds ratio.
+fig_title21 = fig_title.replace("Performance", "Odds ratio").replace(
+    "in", "\nin")
+fig21, ax21 = plt.subplots(figsize = (24, 8), nrows = 1, ncols = 1)
+ax21 = make_barplot1(data = fig_data2, x = "model", y = "DOR", ax = ax21, 
+                     title = fig_title21, xlabels = mdl_names, 
+                     bline = True, fontdict = fontdict)
+fig21.tight_layout()
+plt.show()
+
+## sensitivity.
+fig_title22 = fig_title.replace("Performance", "Sensitivity").replace(
+    "in", "\nin")
+fig22, ax22 = plt.subplots(figsize = (24, 8), nrows = 1, ncols = 1)
+ax22 = make_barplot1(data = fig_data2, x = "model", y = "SEN", ax = ax22, 
+                     title = fig_title22, xlabels = mdl_names, 
+                     fontdict = fontdict)
+fig22.tight_layout()
+plt.show()
+
+
+## save figures.
+if svdat:
+    # datestamp = date_time()
+    datestamp = "23Mar2023"
+    fig_path = data_path[0] + "plots/final_plots2/"
+    if not os.path.exists(fig_path):                                           # create figure dir
+        os.mkdir(fig_path)
+    
+    fig_file = f"brightness_{use_samples}_OR_top_models_th{conf_th}_{use_mdl}_{num_feat_max}features_{datestamp}_v2.pdf"
+    fig21.savefig(fig_path + fig_file, dpi = "figure")
+    
+    fig_file = f"brightness_{use_samples}_SEN_top_models_th{conf_th}_{use_mdl}_{num_feat_max}features_{datestamp}_v2.pdf"
+    fig22.savefig(fig_path + fig_file, dpi = "figure")
+
+
+#%% make cell-type-specific AUC/AP barplots.
+
+svdat = False
+
+fig_title11 = "Performance summary for BrighTNess"
+
+# cell_type_ord = [mdl for mdl in mdl_ord if mdl.count("+") == 0]
+cell_type_ord = ["Myeloid", "Plasmablasts", "Cancer_Epithelial", "CAFs", 
+                  "Normal_Epithelial", "Endothelial", "B-cells", "Bulk"]
+mdl_names_ord = [mdl.replace("_", "\n") for mdl in cell_type_ord]
+
+fig_data11 = perf_test_val[["AUC", "AP"]].copy()
+fig_data11 = fig_data11.loc[cell_type_ord].rename_axis("model").reset_index(
+    ).melt(id_vars = ["model"], var_name = "metric", value_name = "score")
+
+sns.set_style("ticks")
+plt.rcParams.update({"xtick.major.size": 12, "xtick.major.width": 4, 
+                     "ytick.major.size": 12, "ytick.major.width": 4, 
+                     # "xtick.color": [0.8]*3, "ytick.color": [0.8]*3, 
+                     "xtick.bottom": True, "ytick.left": True})
+fig11, ax11 = plt.subplots(figsize = (40, 16), nrows = 1, ncols = 1)
+ax11 = make_barplot2(data = fig_data11, x = "model", y = "score", 
+                     hue = "metric", ax = ax11, title = "BrighTNess", 
+                     xlabels = mdl_names_ord, xrot = 40, 
+                     legend_title = "Metric", fontdict = fontdict)
+ax11.grid(visible = True, which = "major", axis = "y", 
+          color = [0.75]*3, linewidth = 1);
+
+fig11.tight_layout()
+plt.show()
+
+
+## save figure.
+if svdat:
+    # datestamp = date_time()
+    datestamp = "23Mar2023"
+    fig_path = data_path[0] + "plots/final_plots4/"
+    fig_file = f"brightness_{use_samples}_AUC_AP_top_models_th{conf_th}_{use_mdl}_{num_feat_max}features_{datestamp}_v2.pdf"
+        
+    os.makedirs(fig_path, exist_ok = True)                                     # creates figure dir if it doesn't exist
+    fig11.savefig(fig_path + fig_file, dpi = "figure")
+
+
+#%% make cell-type-combo AUC/AP barplots.
+
+svdat = False
+
+fig_title12 = "Performance summary for BrighTNess, two-cell-type ensembles"
+
+cell_type_ord2 = [mdl for mdl in mdl_ord if mdl.count("+") == 1] + ["Bulk"]
+mdl_names_ord2 = [mdl for mdl in mdl_names if mdl.count("$-$") == 1] + ["Bulk"]
+
+fig_data12 = perf_test_val.loc[cell_type_ord2, ["AUC", "AP"]].rename_axis(
+    "model").reset_index().melt(
+        id_vars = ["model"], var_name = "metric", value_name = "score")
+
+fig12, ax12 = plt.subplots(figsize = (36, 14), nrows = 1, ncols = 1)
+ax12 = make_barplot2(data = fig_data12, x = "model", y = "score", 
+                     hue = "metric", ax = ax12, title = fig_title12, 
+                     xlabels = mdl_names_ord2, xrot = 0, fontdict = fontdict)
+fig12.tight_layout()
+plt.show()
+
+
+fig_title13 = "Performance summary for BrighTNess, three-cell-type ensembles"
+
+cell_type_ord3 = [mdl for mdl in mdl_ord if mdl.count("+") == 2] + ["Bulk"]
+mdl_names_ord3 = [mdl for mdl in mdl_names if mdl.count("$-$") == 2] + ["Bulk"]
+
+fig_data13 = perf_test_val.loc[cell_type_ord3, ["AUC", "AP"]].rename_axis(
+    "model").reset_index().melt(
+        id_vars = ["model"], var_name = "metric", value_name = "score")
+
+fig13, ax13 = plt.subplots(figsize = (36, 14), nrows = 1, ncols = 1)
+ax13 = make_barplot2(data = fig_data13, x = "model", y = "score", 
+                     hue = "metric", ax = ax13, title = fig_title13, 
+                     xlabels = mdl_names_ord3, xrot = 0, fontdict = fontdict)
+fig13.tight_layout()
+plt.show()
+
+
+## save figure.
+if svdat:
+    # datestamp = date_time()
+    datestamp = "23Mar2023"
+    fig_path = data_path[0] + "plots/final_plots3/"
+    os.makedirs(fig_path, exist_ok = True)                                     # creates figure dir if it doesn't exist
+    
+    fig_file = f"brightness_{use_samples}_AUC_AP_top_models_combo2_th{conf_th}_{use_mdl}_{num_feat_max}features_{datestamp}_v2.pdf"
+    fig12.savefig(fig_path + fig_file, dpi = "figure")
+            
+    fig_file = f"brightness_{use_samples}_AUC_AP_top_models_combo3_th{conf_th}_{use_mdl}_{num_feat_max}features_{datestamp}_v2.pdf"
+    fig13.savefig(fig_path + fig_file, dpi = "figure")
+
+
+#%% make cell-type-combo AUC/AP barplots - v2.
+
+svdat = False
+
+fig_title23 = ["Top two-cell-type ensembles for BrighTNess", 
+               "Top three-cell-type ensembles for BrighTNess"]
+
+cell_type_ord2 = [mdl for mdl in mdl_ord if mdl.count("+") == 1] + ["Bulk"]
+mdl_names_ord2 = [mdl for mdl in mdl_names if mdl.count("$-$") == 1] + ["Bulk"]
+fig_data232 = perf_test_val.loc[cell_type_ord2, ["AUC", "AP"]].rename_axis(
+    "model").reset_index().melt(
+        id_vars = ["model"], var_name = "metric", value_name = "score")
+
+cell_type_ord3 = [mdl for mdl in mdl_ord if mdl.count("+") == 2] + ["Bulk"]
+mdl_names_ord3 = [mdl for mdl in mdl_names if mdl.count("$-$") == 2] + ["Bulk"]
+fig_data233 = perf_test_val.loc[cell_type_ord3, ["AUC", "AP"]].rename_axis(
+    "model").reset_index().melt(
+        id_vars = ["model"], var_name = "metric", value_name = "score")
+
+fig23, (ax232, ax233) = plt.subplots(figsize = (52, 14), nrows = 1, ncols = 2)
+ax232 = make_barplot2(data = fig_data232, x = "model", y = "score", 
+                      hue = "metric", ax = ax232, title = fig_title23[0], 
+                      xlabels = mdl_names_ord2, xrot = 45, legend = False, 
+                      fontdict = fontdict)
+ax233 = make_barplot2(data = fig_data233, x = "model", y = "score", 
+                      hue = "metric", ax = ax233, title = fig_title23[1], 
+                      xlabels = mdl_names_ord3, xrot = 45, ylabel = " ", 
+                      fontdict = fontdict)
+fig23.tight_layout()
+plt.show()
+
+
+## save figure.
+if svdat:
+    # datestamp = date_time()
+    datestamp = "23Mar2023"
+    fig_path = data_path[0] + "plots/final_plots3/"
+    os.makedirs(fig_path, exist_ok = True)                                     # creates figure dir if it doesn't exist
+    
+    fig_file = f"brightness_{use_samples}_AUC_AP_top_combo_models_th{conf_th}_{use_mdl}_{num_feat_max}features_{datestamp}_v2.pdf"
+    fig23.savefig(fig_path + fig_file, dpi = "figure")        
+    

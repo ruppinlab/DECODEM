@@ -1,12 +1,5 @@
-#### -------------------------------------------------------------------------------
-#### created on 19 may 2023, 08:42pm
-#### author: dhrubas2
-#### -------------------------------------------------------------------------------
-
-.wpath. <- "/Users/dhrubas2/OneDrive - National Institutes of Health/Projects/TMEcontribution/analysis/submission/Code/analysis/"
-.mpath. <- "miscellaneous/r/miscellaneous.R"
-setwd(.wpath.)                                                                      # current path
-source(.mpath.)
+setwd("/Users/dhrubas2/OneDrive - National Institutes of Health/Projects/TMEcontribution/analysis/analysis_final/")
+source("/Users/dhrubas2/OneDrive - National Institutes of Health/miscellaneous/r/miscellaneous.R")
 
 library(rstatix)
 library(clusterProfiler)
@@ -14,13 +7,15 @@ library(org.Hs.eg.db)
 library(biomaRt)
 library(msigdbr)
 
-fcat <- function(...) cat(paste0(glue(...), "\n"))
+fcat <- function(...) cat(paste0(glue(...), "\n"))                                  # f-string print akin to python
 
-## enrichment functions.g
+## enrichment functions.
 enrichREACTOME <- ReactomePA::enrichPathway
 gseREACTOME    <- ReactomePA::gsePathway
 viewREACTOME   <- ReactomePA::viewPathway
 
+
+## perform gsea.
 get.gsea <- function(gene.list, use.pathway, go.onto = "BP", pval.cut = 0.05, 
                      pval.adjust = "fdr", eps = 1e-5, min.gs.size = 5, 
                      max.gs.size = 500, nPermSimple = 1e4, seed = 86420, 
@@ -50,6 +45,7 @@ get.gsea <- function(gene.list, use.pathway, go.onto = "BP", pval.cut = 0.05,
 }
 
 
+## perform over-representation analysis.
 get.go.enrichment <- function(gene.list, background.list, go.onto = "BP", 
                               pval.cut = 0.05, qval.cut = 0.1, pval.adjust = "fdr", 
                               min.gs.size = 5, max.gs.size = 500){
@@ -139,66 +135,53 @@ fcat("\014")                                                                    
 #### -------------------------------------------------------------------------------
 
 ## read data.
-data.path <- "../data/TransNEO/transneo_analysis/mdl_data/"
-data.file <- c("data_tn_tn_valid_bn_conf_genes_exp_resp_SRD.RDS", 
-               "transneo_RvsNR_wilcox_pvals_SRD_22May2023.RDS")
+data.path <- "../../data/TransNEO/transneo_analysis/mdl_data/"
+data.file <- "data_tn_tn_valid_bn_conf_genes_exp_resp_SRD.RDS"
 
-data.list <- readRDS(paste0(data.path, data.file[1]))
+data.list <- readRDS(paste0(data.path, data.file))
 
-## transneo.
+## transneo data.
 exp.all.tn      <- data.list$transneo_exp
 exp.all.conf.tn <- data.list$transneo_exp_conf
 conf.all.tn     <- data.list$transneo_conf
 resp.pCR.tn     <- data.list$transneo_resp
 
-## transneo valid.
-exp.all.tn.val      <- data.list$transneo_valid_exp
-exp.all.conf.tn.val <- data.list$transneo_valid_exp_conf
-conf.all.tn.val     <- data.list$transneo_valid_conf
-resp.pCR.tn.val     <- data.list$transneo_valid_resp
-
-## brightness.
-exp.all.bn      <- data.list$brightness_exp
-exp.all.conf.bn <- data.list$brightness_exp_conf
-conf.all.bn     <- data.list$brightness_conf
-resp.pCR.bn     <- data.list$brightness_resp
-
 data.list %>% rm                                                                    # release memory
 
 
 ## parameters.
-cell.types     <- exp.all.tn %>% names
-cell.types.int <- c("Cancer_Epithelial", "Myeloid", "Plasmablasts", "B-cells",
-                    "Endothelial", "Normal_Epithelial")
-pval.cut       <- 0.2
-eps            <- 1e-4                                                              # nonzero min. value cut-off
-num.perm       <- 1e3                                                               # #permutations used for gsea
+cell.types      <- exp.all.tn %>% names
+cell.types.int  <- c("Cancer_Epithelial", "Endothelial", "Plasmablasts", 
+                     "Normal_Epithelial", "Myeloid", "B-cells", "CAFs")
+pval.cut        <- 0.2
+eps             <- 1e-4                                                             # nonzero min. value cut-off
+num.perm        <- 1e3                                                              # #permutations used for gsea
 
 
 #### -------------------------------------------------------------------------------
 
 ## gsea for transneo.
-lddat <- T                                                                          # load pre-computed data 
+lddat <- T
 if (lddat){
-    data.list <- readRDS(paste0(data.path, data.file[2]))
+    pval.file <- "transneo_RvsNR_wilcox_pvals_SRD_22May2023.RDS"
+    data.list <- readRDS(paste0(data.path, pval.file))
+    
     pvals.all.conf.tn <- data.list$conf
     pvals.all.tn      <- data.list$all.raw
     p.adj.all.tn      <- data.list$all
     
-    data.list %>% rm
+    data.list %>% rm                                                                # release memory
 } else {
-    pvals.all.conf.tn <- get.pval.resp(exp.all.conf.tn, resp.pCR.tn, alt.hyp = "g") # R vs. NR wilcoxon test
-
     pvals.all.tn <- get.pval.resp(exp.all.tn, resp.pCR.tn, alt.hyp = "g")           # R vs. NR wilcoxon test
     p.adj.all.tn <- data.frame(pvals.all.tn, check.names = F) / (conf.all.tn + eps) # adjust p-values by confidence levels
 }
 
 gsea.all.tn  <- get.gsea.cell.types(p.adj.all.tn, 
-                                    cell.types = cell.types.int, 
+                                    cell.types  = cell.types.int, 
                                     use.pathway = "reactome", 
-                                    pval.cut = pval.cut, 
+                                    pval.cut    = pval.cut, 
                                     nPermSimple = num.perm, 
-                                    eps = eps)
+                                    eps         = eps)
 
 gsea.summary.tn <- summarize.gsea.cell.types(gsea.all.tn, sort.by = "Freq")
 fcat("top pathways for TransNEO = ");       print(gsea.summary.tn %>% Head)
@@ -221,12 +204,10 @@ gsea.sum.mat.tn <- gsea.summary.tn$Pathway %>% unique %>% sapply(function(pw){
 fcat("pathway x cell-type matrix = ");      print(gsea.sum.mat.tn %>% Head(5, 10))
 
 
-#### -------------------------------------------------------------------------------
-
 ## save data.
-svdat <- F                                                                          # set T to save data 
+svdat <- F
 if (svdat){
-    datestamp <- DateTime()                                                         # datestamp for analysis
+    datestamp <- DateTime()
     
     ## p-values.
     out.file <- glue("transneo_RvsNR_wilcox_pvals_SRD_{datestamp}.RDS")
@@ -244,74 +225,90 @@ if (svdat){
 
 #### -------------------------------------------------------------------------------
 
-## prepare data for fig 3E.
-num.path.disp <- 15                                                                 # #pathways per cell type to plot
-fig.data3 <- cell.types.int %>% sapply(simplify = F, function(ctp){
+## make gsea plot.
+## plot parameters.
+font.name <- "sans"
+font.size <- c("tick" = 20, "label" = 24, "title" = 32, "plabel" = 60) / 1.0
+dot.size  <- c("min" = 4, "max" = 10) / 1.0
+plt.clrs  <- c("min" = "#7595D0", "max" = "#E08DAC", "base" = "#000000")            # ("vista blue", "amaranth pink", "black")
+line.size <- c("axis" = 2, "dot" = 1, "tick" = 1)
+cbar.size <- c("h" = 1, "w" = 1)
+plt.theme <- theme(
+    panel.grid = element_blank(),
+    # panel.grid = element_line(
+    #     color = "#A9A9A9",linewidth = line.size["tick"] / 2, linetype = "dashed"), 
+    panel.border = element_rect(
+        linewidth = line.size["axis"], color = plt.clrs["base"]), 
+    axis.ticks = element_line(
+        linewidth = line.size["tick"], color = plt.clrs["base"]), 
+    axis.ticks.length = unit(line.size["tick"] / 2, "cm"), 
+    axis.text = element_text(size = font.size["label"], color = plt.clrs["base"]), 
+    plot.title = element_text(
+        hjust = 0.5, size = font.size["title"], face = "bold", 
+        color = plt.clrs["base"]), 
+    legend.title = element_text(
+        hjust = 0.5, size = font.size["title"], face = "bold", 
+        color = plt.clrs["base"]), 
+    legend.text = element_text(hjust = 0.5, size = font.size["label"], 
+                               color = plt.clrs["base"]))
+
+fig.ttl3_II <- "Enriched Reactome pathways"
+
+
+## prepare plot data.
+cell.types.disp <- c("Cancer_Epithelial", "Myeloid", "Normal_Epithelial", 
+                     "Plasmablasts", "Endothelial", "B-cells")
+num.path.disp   <- 15                                                               # #pathways per cell type to plot
+
+fig.data3_II <- cell.types.disp %>% sapply(simplify = F, function(ctp){
     gsea.all.tn[[ctp]] %>% mutate(
         Pathway = Description %>% gsub(pattern = "  ", replacement = " ", fixed = T), 
         logP = -log(p.adjust), 
-        cell.type = ctp %>% gsub(pattern = "_", replacement = "\n")) %>% 
+        cell.type = ctp %>% gsub(pattern = "_", replacement = " ")) %>% 
         dplyr::arrange(desc(logP), pvalue, desc(NES %>% abs)) %>% 
         (function(df) df[!grepl(df$ID, pattern = "R-HSA-9"), ]) %>%                 # remove non-relevant pathways (SARS-COV)
         head(num.path.disp) %>% dplyr::select(Pathway, NES, logP, cell.type)
-}) %>% Reduce(f = rbind) %>% data.frame(check.names = F) 
+}) %>% Reduce(f = rbind) %>% data.frame(check.names = F) %>% mutate(
+    cell.type = cell.type %>% factor(levels = cell.types.disp %>% 
+                                         gsub(pattern = "_", replacement = " ")))
 
 
-#### -------------------------------------------------------------------------------
-
-## make gsea plot - fig 3E.
-font.name <- "sans"
-font.size <- round(c("tick" = 56, "label" = 60, "title" = 84) / 4)                  # set denominator to 1 when saving the plot
-dot.size  <- round(c("min" = 16, "max" = 28) / 2)                                   # set denominator to 1 when saving the plot
-plt.clrs  <- c("min" = "#EFCC74", "max" = "#DC91AD", "base" = "#000000")            # ("jasmine", "amaranth pink", "black")
-line.size <- c("axis" = 4, "dot" = 3, "legend" = 2) / 4                             # set denominator to 1 when saving the plot
-cbar.size <- round(c("h" = 2, "w" = 1.8) / 2.5, 1)                                  # set denominator to 1 when saving the plot
-plt.theme <- theme(
-    panel.grid = element_blank(), 
-    panel.border = element_rect(linewidth = line.size["axis"], 
-                                color = plt.clrs["base"]), 
-    axis.ticks = element_line(linewidth = line.size["axis"] / 2, 
-                              color = plt.clrs["base"]), 
-    axis.text = element_text(size = font.size["label"], color = plt.clrs["base"]), 
-    legend.title = element_text(size = font.size["label"], face = "bold", 
-                                color = plt.clrs["base"]), 
-    legend.title.align = 0.45, 
-    legend.text = element_text(size = font.size["label"], color = plt.clrs["base"]), 
-    legend.text.align = 0)
-
-
-fig.plot3 <- ggplot(
-    data = fig.data3, mapping = aes(x = cell.type, y = Pathway, size = logP)) + 
+## pathway vs. cell type dotplot.
+fig.plot3_II <- ggplot(
+    data = fig.data3_II, mapping = aes(x = cell.type, y = Pathway, size = logP)) + 
     geom_point(mapping = aes(color = NES)) + geom_point(
         shape = 21, stroke = line.size["dot"], color = plt.clrs["base"]) + 
-    xlab("") + ylab("") + scale_size_continuous(
+    xlab("") + ylab("") + ggtitle(fig.ttl3_II) + scale_size_continuous(
         name = latex2exp::TeX("$-\\bf{log}P$", bold = T, italic = T), 
         range = dot.size) + 
     scale_color_gradient(
         low = plt.clrs["min"], high = plt.clrs["max"], 
-        limits = fig.data3$NES %>% range %>% round, guide = guide_colorbar(
+        limits = fig.data3_II$NES %>% range %>% round, guide = guide_colorbar(
             frame.colour = plt.clrs["base"], ticks.colour = plt.clrs["base"], 
-            frame.linewidth = line.size["legend"], 
-            ticks.linewidth = line.size["legend"])) + 
+            frame.linewidth = line.size["tick"], 
+            ticks.linewidth = line.size["tick"])) + 
     guides(size = guide_legend(order = 1), fill = guide_legend(order = 2)) + 
-    theme_bw(base_family = font.name, base_size = font.size["tick"]) + plt.theme + 
-    theme(axis.text.x = element_text(size = font.size["label"], angle = 40, 
-                                     color = plt.clrs["base"], hjust = 1, vjust = 1), 
-          legend.key.height = unit(cbar.size["h"], "cm"), 
-          legend.key.width = unit(cbar.size["w"], "cm"))
+    theme_bw(base_family = font.name, base_size = font.size["tick"]) + 
+    plt.theme + theme(
+        axis.text.x = element_text(size = font.size["label"], angle = 40, hjust = 1, 
+                                   vjust = 1, color = plt.clrs["base"]), 
+        legend.key.height = unit(cbar.size["h"], "cm"), 
+        legend.key.width = unit(cbar.size["w"], "cm")) + 
+    scale_x_discrete(labels = scales::label_wrap(10))
 
-print(fig.plot3)
+print(fig.plot3_II)
 
 
 ## save plot.
-svdat <- F                                                                          # set T to save figure 
+svdat <- F                                                                          # set as T to save figure
 if (svdat){
-    datestamp <- DateTime()                                                         # datestamp for analysis
-    fig.path  <- "../data/plots/"
-    fig.file3 <- glue("transneo_chemo_gsea_reactome_pathways_all_v3_{datestamp}.pdf")
+    fig.path     <- "../../data/TransNEO/transneo_analysis/plots/final_plots6/"
+    fig.file3_II <- glue("transneo_chemo_gsea_reactome_pathways_top.pdf")
     
-    pdf(file = paste0(fig.path, fig.file3), height = 52, width = 60)
-    print(fig.plot3)
+    # pdf(file = paste0(fig.path, fig.file3_II), height = 20, width = 24)
+    ggsave(path = fig.path, filename = fig.file3_II, plot = fig.plot3_II, 
+           device = "pdf", dpi = 600, height = 20, width = 24, units = "in")
+    print(fig.plot3_II)
     
     dev.off()
 }
