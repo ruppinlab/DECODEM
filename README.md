@@ -3,9 +3,8 @@
 # DECODEM / DECODEMi: Systematic assessment of the roles of diverse cell types in tumor microenvironment in clinical response from bulk transcriptome  
 
 <i>
-**The relevant manuscript is currently under review:   
-
-S. R. Dhruba, S. Sahni, B. Wang, D. Wu, Y. Schmidt, E. Shulman, S. Sinha, S. Sammut, C. Caldas, K. Wang, E. Ruppin. <b>"Predicting breast cancer patient response to neoadjuvant chemotherapy from the deconvolved tumor microenvironment transcriptome"</b>, 2023.  
+**The relevant manuscript is currently under review. See the preprint for v1 [here](https://www.biorxiv.org/content/10.1101/2024.06.14.598770v1.full): 
+S. R. Dhruba, S. Sahni, B. Wang, D. Wu, P. S. Rajagopal, Y. Schmidt, E. Shulman, S. Sinha, S. Sammut, C. Caldas, K. Wang, E. Ruppin. <b>"Predicting breast cancer patient response to neoadjuvant chemotherapy from the deconvolved tumor microenvironment transcriptome"</b>, 2024.  
 </i>
 
 We developed a novel computational framework called **DECODEM** (<ins>DE</ins>coupling <ins>C</ins>ell-type-specific <ins>O</ins>utcomes using <ins>DE</ins>convolution and <ins>M</ins>achine learning) that can systematically assess the roles of the diverse cell types in the tumor microenvironment (TME) in a given phenotype from bulk transcriptomics. In this work, we investigate the association of the cell types in breast cancer TME (BC-TME) to patient response to neoadjuvant chemotherapy (responder vs. non-responder). The framework is divided into two steps:  
@@ -19,7 +18,7 @@ AUC = Area under the receiver operating characteristics curve
 AP = Average precision, equivalent to the area under the precision-recall curve  
 </sub>  
 
-![DECODEM](figures/Fig1_DECODEM_v2.png)  
+![DECODEM](figures/DECODEM_and_DECODEMi.png)  
 <p align="center"><sup><i>
 Figure: The full analysis pipeline for DECODEM and DECODEMi
 </i></sup></p>  
@@ -43,7 +42,7 @@ python >= 3.8
 numpy >= 1.23   
 pandas >= 1.4  
 scikit-learn >= 1.1  
-xgboost 1.6.1
+xgboost >= 1.6.1
 pickle >= 3.0  
 matplotlib >= 3.7
 seaborn >= 0.12
@@ -65,7 +64,8 @@ msigdbr >= 7.5
 GSVA >= 1.45  
 PRROC >= 1.3  
 rstatix >= 0.7  
-ggpubr >= 0.6  
+ggpubr >= 0.6 
+seurat >= 5.1.0 
 glue >= 1.6  
 Matrix >= 1.6  
 ```
@@ -92,9 +92,10 @@ Examples of some processed datasets are provided in [data/TransNEO](data/TransNE
 ### DECODEM: Cell-type-specific prediction  
 - `model_transneo_cv_v1.py`: performs the cross-validation analysis using the TransNEO cohort.  
 - `predict_sammut_validation_v2.py`: trains the cell-type-specific/multi-cell-ensemble predictors using TransNEO and validates on the ARTemis + PBCP cohort.  
--`predict_brightness_validation_v2.py`: trains the cell-type-specific/multi-cell-ensemble predictors using TransNEO and validates on the BrighTNess cohort containing triple negative breast cancer (TNBC) patients.  
-- `predict_tnbc_sc_validation_v2.py`: trains the cell-type-specific predictors using TransNEO and validates on the Zhang et al. single-cell cohort of TNBC patients (SC-TNBC).  
-- `stratify_tcga_validation_v3.py`: trains the cell-type-specific predictors using TransNEO and stratifies survival on the TCGA-BRCA cohort. 
+- `predict_brightness_validation_v2.py`: trains the cell-type-specific/multi-cell-ensemble predictors using TransNEO and validates on the BrighTNess cohort containing triple negative breast cancer (TNBC) patients.  
+- `predict_tnbc_sc_validation_v4.py`: trains the cell-type-specific predictors using TransNEO and validates on the Zhang et al. single-cell cohort of TNBC patients (SC-TNBC).  
+- `predict_bc_nac_validation_v3.py`: trains the cell-type-specific predictors using TransNEO and validates on the Bassez et al. single-cell cohort of TNBC patients.
+- `stratify_tcga_validation_v6.py`: trains the cell-type-specific predictors using TransNEO and stratifies survival on the TCGA-BRCA cohort. 
 
 If `svdat = True` in the scripts, the predictions will be saved in [data/TransNEO/transneo_analysis/mdl_data](data/TransNEO/transneo_analysis/mdl_data/) (in .pkl format).  
 
@@ -111,19 +112,21 @@ If `svdat = True` in the scripts, the predictions will be saved in [data/TransNE
 ### Enrichment & association analyses  
 The enrichment analyses results and the figures (or panels) in the manuscript can be reproduced using the scripts in [analysis/enrichment_and_figures](analysis/enrichment_and_figure/).  
 
-- `run_enrichment_top_cell_types_v3.R`: performs cell-type-specific GSEA analysis and generates Fig. 3E.
-- `enrichment_cd4_cd8_tcells_v2.R`: performs GSVA analysis for CD4<sup>+</sup>/CD8<sup>+</sup> T-cells, estimates their predictive power and generates Supp. Figs. 3A-D.   
-- `get_abundance_response_corr_v2.py`: performs an association analysis between cell type abundance and chemotherapy response, and generates Supp. Figs. 3E-G.  
+- `run_enrichment_top_cell_types_v4.R`: performs cell-type-specific GSEA analysis and generates Fig. 3C.
+- `enrichment_cd4_cd8_tcells_v3.R`: performs GSVA analysis for CD4<sup>+</sup>/CD8<sup>+</sup> T-cells, estimates their predictive power and generates Supp. Figs. 4A-D.   
+- `get_abundance_response_corr_v3.py`: performs an association analysis between cell type abundance and chemotherapy response, and generates Supp. Figs. 4E-F.  
 
 If `svdat = True` in the scripts, the figure panels will be saved in [data/plots](data/plots/) (in .pdf format).  
 
 
 ### Reproducing the figures  
-Fig. 1 was generated using [Biorender](http://biorender.com/). To reproduce the remaining figures, use the following scripts in [analysis/enrichment_and_figures](analysis/enrichment_and_figures/):  
+Fig. 1D was generated using [Biorender](http://biorender.com/). To reproduce the remaining figures, use the following scripts in [analysis/enrichment_and_figures](analysis/enrichment_and_figures/):  
 
-- `generate_plots_ctp_v2.py`: generates Figs. 2, 3A-D, Supp. Figs. 1-2.  
-- `generate_plots_cci_v2.py`: generates Fig. 4, Supp. Figs. 4A-D.  
-- `generate_plots_sc_surv_v2.py`: generates Fig. 5, Supp. Fig. 5.  
+- `generate_plots_ctp_v4.py`: generates Figs. 1A-B, 2, 3A-B, Supp. Fig. 2-3.  
+- `generate_plots_cci_v3.py`: generates Fig. 4A-D, Supp. Figs. 6A-D.  
+- `generate_plots_sc_surv_v3.py`: generates Figs. 1C, 5, Supp. Figs. 7-9. 
+- `explore_drug_by_icd_v2.py`: generates Supp. Fig. 5. 
+- `make_benchmark_figures.R`: generates Supp. Fig. 1. 
 
 if `svdat = True` in the scripts, the figures will be saved in [data/plots](data/plots/) (in .pdf format).  
 
