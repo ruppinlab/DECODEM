@@ -99,6 +99,7 @@ Examples of some processed datasets are provided in [data/TransNEO](data/TransNE
 - `predict_tnbc_sc_validation_v4.py`: trains the cell-type-specific predictors using TransNEO and validates on the Zhang et al. single-cell cohort of TNBC patients (SC-TNBC).  
 - `predict_bc_nac_validation_v3.py`: trains the cell-type-specific predictors using TransNEO and validates on the Bassez et al. single-cell cohort of TNBC patients.
 - `stratify_tcga_validation_v6.py`: trains the cell-type-specific predictors using TransNEO and stratifies survival on the TCGA-BRCA cohort. 
+- files with `_loo` in their name: performs hyperparameter tuning using a leave-one-out cross-validation.  
 
 If `svdat = True` in the scripts, the predictions will be saved in [data/TransNEO/transneo_analysis/mdl_data](data/TransNEO/transneo_analysis/mdl_data/) (in .pkl format).  
 
