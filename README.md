@@ -125,8 +125,8 @@ If `svdat = True` in the scripts, the figure panels will be saved in [data/plots
 ### Reproducing the figures  
 Fig. 1D was generated using [Biorender](http://biorender.com/). To reproduce the remaining figures, use the following scripts in [analysis/enrichment_and_figures](analysis/enrichment_and_figures/):  
 
-- `generate_plots_ctp_v4.py`: generates Figs. 1A-B, 2, 3A-B, Supp. Fig. 2-3.  
-- `generate_plots_cci_v3.py`: generates Fig. 4A-D, Supp. Figs. 6A-D.  
+- `generate_plots_ctp_v6.py`: generates Figs. 1A-B, 2, 3A-B, Supp. Fig. 2-3.  
+- `generate_plots_cci_v4.py`: generates Fig. 4A-F, Supp. Figs. 6A-D.  
 - `generate_plots_sc_surv_v3.py`: generates Figs. 1C, 5, Supp. Figs. 7-9. 
 - `explore_drug_by_icd_v2.py`: generates Supp. Fig. 5. 
 - `make_benchmark_figures.R`: generates Supp. Fig. 1. 
