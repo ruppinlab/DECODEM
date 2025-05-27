@@ -20,7 +20,7 @@ AUC = Area under the receiver operating characteristics curve
 AP = Average precision, equivalent to the area under the precision-recall curve  
 </sub>  
 
-![DECODEM](figures/DECODEM_and_DECODEMi.png)  
+![DECODEM](figures/DECODEM_and_DECODEMi.svg)  
 <p align="center"><sup><i>
 Figure: The full analysis pipeline for DECODEM and DECODEMi
 </i></sup></p>  
