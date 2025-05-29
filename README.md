@@ -37,7 +37,7 @@ Our findings in breast cancer highlight the considerable predictive powers of th
 ## Dependencies  
 The deconvolution stage was performed on HPC environment using `R` and `Rslurm` (as part of [CODEFACS](https://github.com/ruppinlab/CODEFACS/)). The CCI inference were performed by using [LIRICS](https://github.com/ruppinlab/CODEFACS/) on the deconvolved data using `R`.  
 
-The ML predictors were developed on MacOS using `python` and further tested on linux (on HPC). The ML scripts can be run interactively using a `python` IDE or on command line as `python script_name.py`. Complementary analyses *i.e.*, data preprocessing, enrichment analysis, CCI validation in SC, and plot generation were performed locally using `R` on RStudio.  
+The ML predictors were developed on MacOS using `python` and further tested on linux (on HPC). The ML scripts can be run interactively using a `python` IDE or on command line as `python script_name.py`. Complementary analyses *i.e.*, data preprocessing, enrichment analysis, CCI validation in SC and plot generation were performed locally using `R` on RStudio.  
 
 Dependencies for `python` scripts:  
 ```python
@@ -127,7 +127,7 @@ If `svdat = True` in the scripts, the figure panels will be saved in [data/plots
 Fig. 1D was generated using [Biorender](http://biorender.com/). To reproduce the remaining figures, use the following scripts in [analysis/enrichment_and_figures](analysis/enrichment_and_figures/):  
 
 - `generate_plots_ctp_v6.py`: generates Figs. 1A-B, 2, 3A-B, Supp. Fig. 2-3.  
-- `generate_plots_cci_v4.py`: generates Fig. 4A-F, Supp. Figs. 6A-D.  
+- `generate_plots_cci_v4.py`: generates Figs. 4A-F, Supp. Figs. 6A-D.  
 - `generate_plots_sc_surv_v3.py`: generates Figs. 1C, 5, Supp. Figs. 7-9. 
 - `explore_drug_by_icd_v2.py`: generates Supp. Fig. 5. 
 - `make_benchmark_figures.R`: generates Supp. Fig. 1. 
