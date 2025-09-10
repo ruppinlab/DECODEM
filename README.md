@@ -40,7 +40,7 @@ The deconvolution stage was performed on HPC environment using `R` and `Rslurm` 
 The ML predictors were developed on MacOS using `python` and further tested on linux (on HPC). The ML scripts can be run interactively using a `python` IDE or on command line as `python script_name.py`. Complementary analyses *i.e.*, data preprocessing, enrichment analysis, CCI validation in SC and plot generation were performed locally using `R` on RStudio.  
 
 Dependencies for `python` scripts:  
-```
+```python
 python >= 3.10  
 numpy >= 1.23   
 pandas >= 1.4  
@@ -55,7 +55,7 @@ pickle == 4.0
 ```  
   
 Dependencies for `R` scripts:  
-```
+```R
 R >= 3.6  
 tidyverse >= 1.3  
 plyr >= 1.8
