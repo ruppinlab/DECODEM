@@ -7,11 +7,11 @@
  
 S. R. Dhruba, S. Sahni, B. Wang, D. Wu, P. S. Rajagopal, Y. Schmidt, E. Shulman, S. Sinha, S. Sammut, C. Caldas, K. Wang, E. Ruppin. <b>"Enhanced prediction of breast cancer patient response to chemotherapy by integrating deconvolved expression patterns of immune, stromal and tumor cells"</b>, 2024.  
 </i>
-See v1 preprint [here](https://www.biorxiv.org/content/10.1101/2024.06.14.598770v1.full)  
+See preprint: https://doi.org/10.1101/2024.06.14.598770  
 
 We developed a novel computational framework called **DECODEM** (<ins>DE</ins>coupling <ins>C</ins>ell-type-specific <ins>O</ins>utcomes using <ins>DE</ins>convolution and <ins>M</ins>achine learning) that can systematically assess the roles of the diverse cell types in the tumor microenvironment (TME) in a given phenotype from bulk transcriptomics. In this work, we investigate the association of the cell types in breast cancer TME (BC-TME) to patient response to neoadjuvant chemotherapy (responder vs. non-responder). The framework is divided into two steps:  
 
-1. **Deconvolution**: we use [CODEFACS](https://github.com/ruppinlab/CODEFACS/) to deconvolve the bulk gene expression into nine cell-type-specific gene expression profiles encompassing malignant, immune, and stromal cell types.  
+1. **Deconvolution**: we use [CODEFACS](https://doi.org/10.5281/zenodo.5790343) to deconvolve the bulk gene expression into nine cell-type-specific gene expression profiles encompassing malignant, immune, and stromal cell types.  
 2. **Machine Learning**: we use a **machine learning (ML) pipeline** to build nine cell-type-specific predictors of chemotherapy response using the deconvolved expression profiles.    
 
 The output of the framework is the likelihood scores that the patients will respond to chemotherapy. We then **ranked** the cell types within the BC-TME based on their predictive power (in terms of AUC, AP and DOR), identifying "prominent" cell types that provide improvements over the bulk mixture. We further validate these prominent cell types in multiple **independent** BC cohorts encompassing both bulk and single-cell (SC) transcriptomics.  
@@ -41,7 +41,7 @@ The ML predictors were developed on MacOS using `python` and further tested on l
 
 Dependencies for `python` scripts:  
 ```python
-python >= 3.8  
+python >= 3.10  
 numpy >= 1.23   
 pandas >= 1.4  
 scikit-learn >= 1.1  
@@ -51,7 +51,7 @@ matplotlib >= 3.7
 seaborn >= 0.12
 tqdm >= 4.63  
 lifelines >= 0.27  
-pickle 4.0  
+pickle == 4.0  
 ```  
   
 Dependencies for `R` scripts:  
