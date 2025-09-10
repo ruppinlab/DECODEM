@@ -29,18 +29,18 @@ Figure: The full analysis pipeline for DECODEM and DECODEMi
   
 Furthermore, we investigate the interactions between different cell types in two ways:  
 * <b><i>Multi-cell-ensemble</i></b>: we incorporate the expression profiles of the top predictive cell types to boost the predictive power even further, yielding the best performance for an <b>ensemble of immune and stromal cell types</b> across two independent cohorts.  
-* <b><i>DECODEMi</i></b>: we extended DECODEM to **DECODEMi** ('i' stands for interaction) where we use the <b>inferred cell-cell interactions (CCIs)</b> (by using [LIRICS](https://github.com/ruppinlab/CODEFACS/)) to identify the cellular communications that influence chemotherapy response in BC.  
+* <b><i>DECODEMi</i></b>: we extended DECODEM to **DECODEMi** ('i' stands for interaction) where we use the <b>inferred cell-cell interactions (CCIs)</b> (by using [LIRICS](https://doi.org/10.5281/zenodo.5790343)) to identify the cellular communications that influence chemotherapy response in BC.  
 
 Our findings in breast cancer highlight the considerable predictive powers of the immune and stromal cells in the TME as well as denote key CCIs that are strongly predictive of chemotherapy response.  
 
 
 ## Dependencies  
-The deconvolution stage was performed on HPC environment using `R` and `Rslurm` (as part of [CODEFACS](https://github.com/ruppinlab/CODEFACS/)). The CCI inference were performed by using [LIRICS](https://github.com/ruppinlab/CODEFACS/) on the deconvolved data using `R`.  
+The deconvolution stage was performed on HPC environment using `R` and `Rslurm` (as part of CODEFACS). The CCI inference were performed by using LIRICS on the deconvolved data using `R`.  
 
 The ML predictors were developed on MacOS using `python` and further tested on linux (on HPC). The ML scripts can be run interactively using a `python` IDE or on command line as `python script_name.py`. Complementary analyses *i.e.*, data preprocessing, enrichment analysis, CCI validation in SC and plot generation were performed locally using `R` on RStudio.  
 
 Dependencies for `python` scripts:  
-```python
+```
 python >= 3.10  
 numpy >= 1.23   
 pandas >= 1.4  
@@ -55,7 +55,7 @@ pickle == 4.0
 ```  
   
 Dependencies for `R` scripts:  
-```R
+```
 R >= 3.6  
 tidyverse >= 1.3  
 plyr >= 1.8
