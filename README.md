@@ -12,7 +12,7 @@ See preprint: https://doi.org/10.1101/2024.06.14.598770
 We developed a novel computational framework called **DECODEM** (<ins>DE</ins>coupling <ins>C</ins>ell-type-specific <ins>O</ins>utcomes using <ins>DE</ins>convolution and <ins>M</ins>achine learning) that can systematically assess the roles of the diverse cell types in the tumor microenvironment (TME) in a given phenotype from bulk transcriptomics. In this work, we investigate the association of the cell types in breast cancer TME (BC-TME) to patient response to neoadjuvant chemotherapy (responder vs. non-responder). The framework is divided into two steps:  
 
 1. **Deconvolution**: we use [CODEFACS](https://doi.org/10.5281/zenodo.5790343) to deconvolve the bulk gene expression into nine cell-type-specific gene expression profiles encompassing malignant, immune, and stromal cell types.  
-2. **Machine Learning**: we use a **machine learning (ML) pipeline** to build nine cell-type-specific predictors of chemotherapy response using the deconvolved expression profiles.    
+2. **Machine Learning**: we use a [**machine learning (ML) pipeline**](analysis/machine_learning/) to build nine cell-type-specific predictors of chemotherapy response using the deconvolved expression profiles.    
 
 The output of the framework is the likelihood scores that the patients will respond to chemotherapy. We then **rank** the cell types within the BC-TME based on their predictive power (in terms of AUC, AP and DOR), identifying "prominent" cell types that provide improvements over the bulk mixture. We further validate the prominent cell types in multiple **independent** BC cohorts encompassing both bulk and single-cell (SC) transcriptomics.  
 <sub>
