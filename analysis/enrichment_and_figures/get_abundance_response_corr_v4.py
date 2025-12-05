@@ -435,7 +435,7 @@ mdl_names11 = [mdl.replace("_", " ").replace("+", "$^+$")
                for mdl in cell_types11]
 
 
-#%% generate data for visualization - supp. fig. 4.
+#%% generate data for visualization - supp. fig. 5.
 
 def get_pred_data(y_true, y_pred, models, althyp = "greater"):
     ## build score dataframe.
@@ -467,49 +467,49 @@ def get_pred_data(y_true, y_pred, models, althyp = "greater"):
 ## prepare data for panels A-B.
 alt_hyp = "two-sided"
 
-fig_dataS4A1, fig_statS4A1 = get_pred_data(y_true = resp_pCR_tn, 
+fig_dataS5A1, fig_statS5A1 = get_pred_data(y_true = resp_pCR_tn, 
                                            y_pred = y_pred_frac_tn, 
                                            models = mdl_ord, 
                                            althyp = alt_hyp)
 
-fig_dataS4A2, fig_statS4A2 = get_pred_data(y_true = resp_pCR_tn_val, 
+fig_dataS5A2, fig_statS5A2 = get_pred_data(y_true = resp_pCR_tn_val, 
                                            y_pred = y_pred_frac_tn_val, 
                                            models = mdl_ord, 
                                            althyp = alt_hyp)
 
-fig_dataS4A3, fig_statS4A3 = get_pred_data(y_true = resp_pCR_bn, 
+fig_dataS5A3, fig_statS5A3 = get_pred_data(y_true = resp_pCR_bn, 
                                            y_pred = y_pred_frac_bn, 
                                            models = mdl_ord, 
                                            althyp = alt_hyp)
 
 
-fig_dataS4B1, fig_statS4B1 = get_pred_data(y_true = resp_pCR_tn, 
+fig_dataS5B1, fig_statS5B1 = get_pred_data(y_true = resp_pCR_tn, 
                                            y_pred = y_pred_frac_tn11, 
                                            models = cell_types11, 
                                            althyp = alt_hyp)
 
-fig_dataS4B2, fig_statS4B2 = get_pred_data(y_true = resp_pCR_tn_val, 
+fig_dataS5B2, fig_statS5B2 = get_pred_data(y_true = resp_pCR_tn_val, 
                                            y_pred = y_pred_frac_tn_val11, 
                                            models = cell_types11, 
                                            althyp = alt_hyp)
 
-fig_dataS4B3, fig_statS4B3 = get_pred_data(y_true = resp_pCR_bn, 
+fig_dataS5B3, fig_statS5B3 = get_pred_data(y_true = resp_pCR_bn, 
                                            y_pred = y_pred_frac_bn11, 
                                            models = cell_types11, 
                                            althyp = alt_hyp)
 
-fig_dataS4A = pd.concat([fig_dataS4A1, fig_dataS4A2, fig_dataS4A3], axis = 1, 
+fig_dataS5A = pd.concat([fig_dataS5A1, fig_dataS5A2, fig_dataS5A3], axis = 1, 
                         keys = ds_info.label.values)
-fig_dataS4B = pd.concat([fig_dataS4B1, fig_dataS4B2, fig_dataS4B3], axis = 1, 
+fig_dataS5B = pd.concat([fig_dataS5B1, fig_dataS5B2, fig_dataS5B3], axis = 1, 
                         keys = ds_info.label.values)
-fig_statS4A = pd.concat([fig_statS4A1, fig_statS4A2, fig_statS4A3], axis = 1, 
+fig_statS5A = pd.concat([fig_statS5A1, fig_statS5A2, fig_statS5A3], axis = 1, 
                         keys = ds_info.label.values)
-fig_statS4B = pd.concat([fig_statS4B1, fig_statS4B2, fig_statS4B3], axis = 1, 
+fig_statS5B = pd.concat([fig_statS5B1, fig_statS5B2, fig_statS5B3], axis = 1, 
                         keys = ds_info.label.values)
 
 
 ## prepare data for panels C-D.
-fig_dataS4C = pd.concat({
+fig_dataS5C = pd.concat({
     met: pd.concat(
         [perf_test_frac_tn[met], perf_test_frac_tn_val[met], 
          perf_test_frac_bn[met]], axis = 1, 
@@ -518,17 +518,17 @@ fig_dataS4C = pd.concat({
         names = "model")
     for met in ["AUC", "AP"]}, axis = 1)
 
-fig_dataS4D = pd.concat(
+fig_dataS5D = pd.concat(
     [perf_test_frac_tn11, perf_test_frac_tn_val11, perf_test_frac_bn11], 
     axis = 0).reset_index(
     names = "model")
-fig_dataS4D.insert(
+fig_dataS5D.insert(
     loc = 1, column = "cohort", value = np.repeat(
         ds_info.label, repeats = len(cell_types11)).tolist())
-fig_dataS4D.sort_values(by = "model", ascending = True, inplace = True)
+fig_dataS5D.sort_values(by = "model", ascending = True, inplace = True)
 
 
-#%% generate supp. fig. 4-I.
+#%% generate supp. fig. 5-I.
 
 svdat = False                                                                  # set as True to save data
 
@@ -554,36 +554,36 @@ legend_fonts = {"item" : {"size": 12, "weight": "regular"},
                 "title": {"size": 16, "weight": "bold"}}
 
 ## violin plots.
-fig_colorsS4 = [colors[k] for k in [0, 1, -1]]
-fig_ylimS4   = 0.45
-fig_plocS4   = 0.45
+fig_colorsS5 = [colors[k] for k in [0, 1, -1]]
+fig_ylimS5   = 0.45
+fig_plocS5   = 0.45
 
-figS4_I, axS4_I = plt.subplots(figsize = (18, 8), nrows = 3, ncols = 2, 
+figS5_I, axS5_I = plt.subplots(figsize = (18, 8), nrows = 3, ncols = 2, 
                                sharex = False, sharey = True, 
                                width_ratios = [0.8, 0.2])
-axS4_I = dict(zip(["A1", "B1", "A2", "B2", "A3", "B3"], axS4_I.ravel()))
+axS5_I = dict(zip(["A1", "B1", "A2", "B2", "A3", "B3"], axS5_I.ravel()))
 
 ## make violins.
 for k, ds in enumerate(ds_info.label.values, start = 1):
-    ax = [axS4_I[f"A{k}"], axS4_I[f"B{k}"]]
+    ax = [axS5_I[f"A{k}"], axS5_I[f"B{k}"]]
     
-    ax[0] = make_violinplot(data = fig_dataS4A[ds].dropna(), x = "model", 
+    ax[0] = make_violinplot(data = fig_dataS5A[ds].dropna(), x = "model", 
                             y = "score", hue = "Response", 
-                            stats = fig_statS4A[ds], order = mdl_ord, 
+                            stats = fig_statS5A[ds], order = mdl_ord, 
                             hue_order = ["R", "NR"], width = 0.4, 
                             inner = "quart", vnorm = "count", split = True, 
-                            gap = 0.15, dodge = True, statloc = fig_plocS4, 
-                            statline = False, colors = fig_colorsS4, 
+                            gap = 0.15, dodge = True, statloc = fig_plocS5, 
+                            statline = False, colors = fig_colorsS5, 
                             legend_vert = True, legend_out = True, 
                             legend_title = "Response", ax = ax[0])
     
-    ax[1] = make_violinplot(data = fig_dataS4B[ds].dropna(), x = "model", 
+    ax[1] = make_violinplot(data = fig_dataS5B[ds].dropna(), x = "model", 
                             y = "score", hue = "Response", 
-                            stats = fig_statS4B[ds], order = cell_types11, 
+                            stats = fig_statS5B[ds], order = cell_types11, 
                             hue_order = ["R", "NR"], width = 0.4, 
                             inner = "quart", vnorm = "count", split = True, 
-                            gap = 0.15, dodge = True, statloc = fig_plocS4, 
-                            statline = False, colors = fig_colorsS4, 
+                            gap = 0.15, dodge = True, statloc = fig_plocS5, 
+                            statline = False, colors = fig_colorsS5, 
                             legend_vert = True, legend_out = True, 
                             legend_title = "Response", ax = ax[1])
     
@@ -607,12 +607,12 @@ for k, ds in enumerate(ds_info.label.values, start = 1):
     
 
 ## format labels.
-figS4_I.text(x = 0.010, y = 0.95, s = "A", **panel_fonts);
-figS4_I.text(x = 0.725, y = 0.95, s = "B", **panel_fonts);
-figS4_I.supylabel("Cell abundance (rescaled)", x = 0.015, y = 0.53, 
+figS5_I.text(x = 0.010, y = 0.95, s = "A", **panel_fonts);
+figS5_I.text(x = 0.725, y = 0.95, s = "B", **panel_fonts);
+figS5_I.supylabel("Cell abundance (rescaled)", x = 0.015, y = 0.53, 
                   ha = "center", va = "center", ma = "center", **label_fonts);
 
-figS4_I.tight_layout(h_pad = 2, w_pad = 2)
+figS5_I.tight_layout(h_pad = 2, w_pad = 2)
 plt.show()
 
 
@@ -621,12 +621,12 @@ if svdat:
     fig_path = data_path[0] + "plots/final_plots7/"    
     os.makedirs(fig_path, exist_ok = True)                                     # creates figure dir if it doesn't exist
     
-    fig_fileS4_I = "all_predictions_chemo_cell_abundance_v2.pdf"
-    figS4_I.savefig(fig_path + fig_fileS4_I, dpi = 600)
-    print(fig_fileS4_I)
+    fig_fileS5_I = "all_predictions_chemo_cell_abundance_v2.pdf"
+    figS5_I.savefig(fig_path + fig_fileS5_I, dpi = 600)
+    print(fig_fileS5_I)
 
 
-#%% generate supp. fig. 4-II.
+#%% generate supp. fig. 5-II.
 
 svdat = False                                                                  # set as True to save data
 
@@ -653,40 +653,40 @@ legend_fonts = {"item" : {"size": 12, "weight": "regular"},
                 "title": {"size": 16, "weight": "bold"}}
 
 ## radar charts.
-fig_colorsS4 = [colors[k] for k in [4, 3, 5, -1]]
-fig_thetaS4  = RadarChart(num_vars = len(mdl_names), frame = "circle")
-fig_baseS4   = [0.5] * len(fig_thetaS4)
-fig_ticksS4  = pad_radar_ticks(ticks = mdl_names, pads = [12, 8])
+fig_colorsS5 = [colors[k] for k in [4, 3, 5, -1]]
+fig_thetaS5  = RadarChart(num_vars = len(mdl_names), frame = "circle")
+fig_baseS5   = [0.5] * len(fig_thetaS5)
+fig_ticksS5  = pad_radar_ticks(ticks = mdl_names, pads = [12, 8])
 
 
-figS4_II, axS4_II = plt.subplots(figsize = (14, 5), nrows = 1, ncols = 2, 
+figS5_II, axS5_II = plt.subplots(figsize = (14, 5), nrows = 1, ncols = 2, 
                                  subplot_kw = {"projection": "radar"})
-axS4_II = dict(zip(["C1", "C2"], axS4_II))
+axS5_II = dict(zip(["C1", "C2"], axS5_II))
 
 ## make radars.
-for ds, clr in zip(ds_info.label, fig_colorsS4):
-    axS4_II["C1"] = make_radar_lines(data = fig_dataS4C["AUC"][ds], 
-                                     theta = fig_thetaS4, labels = fig_ticksS4, 
+for ds, clr in zip(ds_info.label, fig_colorsS5):
+    axS5_II["C1"] = make_radar_lines(data = fig_dataS5C["AUC"][ds], 
+                                     theta = fig_thetaS5, labels = fig_ticksS5, 
                                      color = clr, alpha = 0.4, ls = "-", lw = 2, 
-                                     ms = 8, ax = axS4_II["C1"])
+                                     ms = 8, ax = axS5_II["C1"])
     
-    axS4_II["C2"] = make_radar_lines(data = fig_dataS4C["AP"][ds], 
-                                     theta = fig_thetaS4, labels = fig_ticksS4, 
+    axS5_II["C2"] = make_radar_lines(data = fig_dataS5C["AP"][ds], 
+                                     theta = fig_thetaS5, labels = fig_ticksS5, 
                                      color = clr, alpha = 0.4, ls = "-", lw = 2, 
-                                     ms = 8, ax = axS4_II["C2"])
+                                     ms = 8, ax = axS5_II["C2"])
     
     ## format ticks & titles.
-    axS4_II["C1"].set_rlim([0.10, 0.95]);   axS4_II["C2"].set_rlim([0.0, 0.75]);
+    axS5_II["C1"].set_rlim([0.10, 0.95]);   axS5_II["C2"].set_rlim([0.0, 0.75]);
     [ax_.set_title(ttl_, y = 1.16, **title_fonts) 
-     for ax_, ttl_ in zip(axS4_II.values(), ["AUC", "AP"])];
+     for ax_, ttl_ in zip(axS5_II.values(), ["AUC", "AP"])];
     
 ## format legends & labels.
-axS4_II["C2"].legend(labels = ds_info.label, loc = (1.24, 0.4), 
+axS5_II["C2"].legend(labels = ds_info.label, loc = (1.24, 0.4), 
                      title = "Dataset", prop = legend_fonts["item"], 
                      title_fontproperties = legend_fonts["title"])
-figS4_II.text(x = 0.01, y = 0.9, s = "C", **panel_fonts);
+figS5_II.text(x = 0.01, y = 0.9, s = "C", **panel_fonts);
 
-figS4_II.tight_layout(h_pad = 0, w_pad = 4)
+figS5_II.tight_layout(h_pad = 0, w_pad = 4)
 plt.show()
 
 
@@ -695,12 +695,12 @@ if svdat:
     fig_path = data_path[0] + "plots/final_plots7/"    
     os.makedirs(fig_path, exist_ok = True)                                     # creates figure dir if it doesn't exist
     
-    fig_fileS4_II = "all_chemo_abundance_response_association.pdf"
-    figS4_II.savefig(fig_path + fig_fileS4_II, dpi = 600)
-    print(fig_fileS4_II)
+    fig_fileS5_II = "all_chemo_abundance_response_association.pdf"
+    figS5_II.savefig(fig_path + fig_fileS5_II, dpi = 600)
+    print(fig_fileS5_II)
 
 
-#%% generate supp. fig. 4-III.
+#%% generate supp. fig. 5-III.
 
 svdat = False                                                                  # set as True to save data
 
@@ -726,15 +726,15 @@ fontdict = {"label": dict(fontsize = 12, fontweight = "regular"),
             "plabel": dict(fontsize = 36, fontweight = "bold")}
 
 ## grouped barplots.
-fig_colorsS4 = [colors[k] for k in [4, 3, 5]]
+fig_colorsS5 = [colors[k] for k in [4, 3, 5]]
 
-figS4_III, axS4_III = plt.subplots(figsize = (8, 5), nrows = 2, ncols = 1, 
+figS5_III, axS5_III = plt.subplots(figsize = (8, 5), nrows = 2, ncols = 1, 
                                    sharex = True, sharey = False)
-axS4_III = dict(zip(["D1", "D2"], axS4_III))
+axS5_III = dict(zip(["D1", "D2"], axS5_III))
 
-for k, (ax, met) in enumerate(zip(axS4_III.values(), ["AUC", "AP"])):
-    ax = make_barplot3(data = fig_dataS4D, x = "model", y = met, hue = "cohort", 
-                       width = 0.6, colors = fig_colorsS4, lw = 2, 
+for k, (ax, met) in enumerate(zip(axS5_III.values(), ["AUC", "AP"])):
+    ax = make_barplot3(data = fig_dataS5D, x = "model", y = met, hue = "cohort", 
+                       width = 0.6, colors = fig_colorsS5, lw = 2, 
                        bar_labels = True, xlabels = mdl_names11, title = met, 
                        legend_title = "Dataset", fontdict = fontdict, ax = ax)
     
@@ -748,9 +748,9 @@ for k, (ax, met) in enumerate(zip(axS4_III.values(), ["AUC", "AP"])):
         ax.get_legend().set(bbox_to_anchor = (1.1, 0.6, 0.4, 0.4), 
                             frame_on = False)
 
-figS4_III.text(x = -0.025, y = 0.95, s = "D", **fontdict["plabel"]);
+figS5_III.text(x = -0.025, y = 0.95, s = "D", **fontdict["plabel"]);
 
-figS4_III.tight_layout(h_pad = 2, w_pad = 0)
+figS5_III.tight_layout(h_pad = 2, w_pad = 0)
 plt.show()
 
 
@@ -759,7 +759,7 @@ if svdat:
     fig_path = data_path[0] + "plots/final_plots7/"    
     os.makedirs(fig_path, exist_ok = True)                                     # creates figure dir if it doesn't exist
     
-    fig_fileS4_III = "all_chemo_Tcells_abundance_response_association.pdf"
-    figS4_III.savefig(fig_path + fig_fileS4_III, dpi = 600)
-    print(fig_fileS4_III)
+    fig_fileS5_III = "all_chemo_Tcells_abundance_response_association.pdf"
+    figS5_III.savefig(fig_path + fig_fileS5_III, dpi = 600)
+    print(fig_fileS5_III)
 

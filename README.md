@@ -3,11 +3,10 @@
 # DECODEM / DECODEMi: Systematic assessment of the tumor microenvironment from bulk transcriptome  
 
 <i>
-**The relevant manuscript is currently under review. 
+**The relevant manuscript is now out at [Cancer Letters](https://doi.org/10.1016/j.canlet.2025.218101). 
  
-S. R. Dhruba, S. Sahni, B. Wang, D. Wu, P. S. Rajagopal, Y. Schmidt, E. Shulman, S. Sinha, S. Sammut, C. Caldas, K. Wang, E. Ruppin. <b>"Enhanced prediction of breast cancer patient response to chemotherapy by integrating deconvolved expression patterns of immune, stromal and tumor cells"</b>, 2024.  
+S. R. Dhruba, S. Sahni, B. Wang, D. Wu, P. S. Rajagopal, Y. Schmidt, E. Shulman, S. Sinha, S. Sammut, C. Caldas, K. Wang, E. Ruppin. <b>"Enhanced prediction of breast cancer patient response to chemotherapy by integrating deconvolved expression patterns of immune, stromal and tumor cells"</b>, Cancer Letters, 2025.  
 </i>
-See preprint: https://doi.org/10.1101/2024.06.14.598770  
 
 We developed a novel computational framework called **DECODEM** (<ins>DE</ins>coupling <ins>C</ins>ell-type-specific <ins>O</ins>utcomes using <ins>DE</ins>convolution and <ins>M</ins>achine learning) that can systematically assess the roles of the diverse cell types in the tumor microenvironment (TME) in a given phenotype from bulk transcriptomics. In this work, we investigate the association of the cell types in breast cancer TME (BC-TME) to patient response to neoadjuvant chemotherapy (responder vs. non-responder). The framework is divided into two steps:  
 
@@ -35,7 +34,7 @@ Our findings in breast cancer highlight the considerable predictive powers of th
 
 
 ## Dependencies  
-The deconvolution stage was performed on HPC environment using `R` and `Rslurm` (as part of CODEFACS). The CCI inference were performed by using LIRICS on the deconvolved data using `R`.  
+The deconvolution stage was performed on HPC environment using `R` and `Rslurm` (as part of CODEFACS). The CCI inference was performed by using LIRICS on the deconvolved data and [CellChat v2](https://github.com/sqjin/CellChat) on SC data using `R`.  
 
 The ML predictors were developed on MacOS using `python` and further tested on linux (on HPC). The ML scripts can be run interactively using a `python` IDE or on command line as `python script_name.py`. Complementary analyses *i.e.*, data preprocessing, enrichment analysis, CCI validation in SC and plot generation were performed locally using `R` on RStudio.  
 
@@ -93,22 +92,22 @@ Examples of some processed datasets are provided in [data/TransNEO](data/TransNE
 
 
 ### DECODEM: Cell-type-specific prediction  
-- `model_transneo_cv_v1.py`: performs the cross-validation analysis using the TransNEO cohort.  
-- `predict_sammut_validation_v2.py`: trains the cell-type-specific/multi-cell-ensemble predictors using TransNEO and validates on the ARTemis + PBCP cohort.  
-- `predict_brightness_validation_v2.py`: trains the cell-type-specific/multi-cell-ensemble predictors using TransNEO and validates on the BrighTNess cohort containing triple negative breast cancer (TNBC) patients.  
-- `predict_tnbc_sc_validation_v4.py`: trains the cell-type-specific predictors using TransNEO and validates on the Zhang et al. single-cell cohort of TNBC patients (SC-TNBC).  
-- `predict_bc_nac_validation_v3.py`: trains the cell-type-specific predictors using TransNEO and validates on the Bassez et al. single-cell cohort of TNBC patients.
-- `stratify_tcga_validation_v6.py`: trains the cell-type-specific predictors using TransNEO and stratifies survival on the TCGA-BRCA cohort. 
+- `model_transneo_cv_v[x].py`: performs the cross-validation analysis using the TransNEO cohort.  
+- `predict_sammut_validation_v[x].py`: trains the cell-type-specific/multi-cell-ensemble predictors using TransNEO and validates on the ARTemis + PBCP cohort.  
+- `predict_brightness_validation_v[x].py`: trains the cell-type-specific/multi-cell-ensemble predictors using TransNEO and validates on the BrighTNess cohort containing triple negative breast cancer (TNBC) patients.  
+- `predict_zhang_sc_validation_v[x].py`: trains the cell-type-specific predictors using TransNEO and validates on the Zhang et al. single-cell cohort of TNBC patients (SC-TNBC).  
+- `predict_bassez_sc_validation_v[x].py`: trains the cell-type-specific predictors using TransNEO and validates on the Bassez et al. single-cell cohort of TNBC patients.
+- `stratify_tcga_validation_v[x].py`: trains the cell-type-specific predictors using TransNEO and stratifies survival on the TCGA-BRCA cohort. 
 - _files with `_loo` in their name_ : performs hyperparameter tuning using a leave-one-out cross-validation.  
 
 If `svdat = True` in the scripts, the predictions will be saved in [data/TransNEO/transneo_analysis/mdl_data](data/TransNEO/transneo_analysis/mdl_data/) (in .pkl format).  
 
 
 ### DECODEMi: CCI-based prediction  
-- `model_transneo_lirics_cv_v3.py`: performs the cross-validation analysis using TransNEO and extracts the corresponding top predictive CCIs.  
-- `predict_sammut_lirics_validation_v2.py`: trains the CCI-based predictor using TransNEO, validates on ARTemis + PBCP and extracts the corresponding top predictive CCIs.  
-- `predict_brightness_lirics_validation_v2.py`: trains the CCI-based predictor using TransNEO, validates on BrighTNess and extracts the corresponding top predictive CCIs.  
-- `predict_sc_validation_cci_pseudopatients_v1.R`: validates the top predictive CCIs in TNBC (using BrighTNess) extracted by DECODEMi with a SC pseudopatient cohort sourced from the Zhang et al. SC-TNBC cohort and generates Figs. S4E-F.  
+- `model_transneo_lirics_cv_v[x].py`: performs the cross-validation analysis using TransNEO and extracts the corresponding top predictive CCIs.  
+- `predict_sammut_lirics_validation_v[x].py`: trains the CCI-based predictor using TransNEO, validates on ARTemis + PBCP and extracts the corresponding top predictive CCIs.  
+- `predict_brightness_lirics_validation_v[x].py`: trains the CCI-based predictor using TransNEO, validates on BrighTNess and extracts the corresponding top predictive CCIs.  
+- `predict_zhang_lirics_sc_validation_cellchat_v[x].R`: validates the top predictive CCIs in TNBC (using BrighTNess) extracted by DECODEMi with Zhang et al. SC cohort (CCIs extracted by CellChat v2) and generates Figs. S4G-H.  
 
 If `svdat = True` in the scripts, the predictions will be saved in [data/TransNEO/transneo_analysis/mdl_data](data/TransNEO/transneo_analysis/mdl_data/) (in .pkl format).  
 
@@ -116,24 +115,25 @@ If `svdat = True` in the scripts, the predictions will be saved in [data/TransNE
 ### Enrichment & association analyses  
 The enrichment analyses results and the figures (or panels) in the manuscript can be reproduced using the scripts in [analysis/enrichment_and_figures](analysis/enrichment_and_figure/).  
 
-- `run_enrichment_top_cell_types_v4.R`: performs cell-type-specific GSEA analysis and generates Fig. 3C.
-- `enrichment_cd4_cd8_tcells_v3.R`: performs GSVA analysis for CD4<sup>+</sup>/CD8<sup>+</sup> T-cells, estimates their predictive power and generates Supp. Figs. 4A-D.   
-- `get_abundance_response_corr_v3.py`: performs an association analysis between cell type abundance and chemotherapy response, and generates Supp. Figs. 4E-F.  
+- `run_enrichment_top_cell_types_v[x].R`: performs cell-type-specific GSEA analysis and generates Fig. 3G.
+- `enrichment_cd4_cd8_tcells_v[x].R`: performs GSVA analysis for CD4<sup>+</sup>/CD8<sup>+</sup> T-cells, estimates their predictive power and generates Supp. Figs. 6G-J.   
+- `get_abundance_response_corr_v[x].py`: performs an association analysis between cell type abundance and chemotherapy response, and generates Supp. Fig. 5.  
 
 If `svdat = True` in the scripts, the figure panels will be saved in [data/plots](data/plots/) (in .pdf format).  
 
 
 ### Reproducing the figures  
-Fig. 1D was generated using [Biorender](http://biorender.com/). To reproduce the remaining figures, use the following scripts in [analysis/enrichment_and_figures](analysis/enrichment_and_figures/):  
+Fig. 1D was generated using Biorender (Dhruba, S. R. (2025) https://BioRender.com/z38y774). To reproduce the remaining figures, use the following scripts in [analysis/enrichment_and_figures](analysis/enrichment_and_figures/):  
 
-- `generate_plots_ctp_v6.py`: generates Figs. 1A-B, 2, 3A-B, Supp. Fig. 2-3.  
-- `generate_plots_cci_v4.py`: generates Figs. 4A-F, Supp. Figs. 6A-D.  
-- `generate_plots_sc_surv_v3.py`: generates Figs. 1C, 5, Supp. Figs. 7-9. 
-- `explore_drug_by_icd_v2.py`: generates Supp. Fig. 5. 
-- `make_benchmark_figures.R`: generates Supp. Fig. 1. 
+- `generate_plots_ctp_v[x].py`: generates Figs. 1A-B, 2, 3A-F, Supp. Fig. 2-3.  
+- `generate_plots_cci_v[x].py`: generates Figs. 4A-F, Supp. Figs. 8A-D. 
+- `generate_plots_sc_surv_v[x].py`: generates Figs. 1C, 5, Supp. Figs. 10-11. 
+- `explore_drug_by_icd_v[x].py`: generates Supp. Fig. 7. 
+- `make_benchmark_figures_v[x].R`: generates Supp. Fig. 1. 
 
 if `svdat = True` in the scripts, the figures will be saved in [data/plots](data/plots/) (in .pdf format).  
 
+The figures are further polished using Adobe Illustrator. 
 Examples of the figures generated are provided in [figures](figures/).  
   
   
