@@ -106,7 +106,7 @@ class tic:
             print(f"\nend time = {datetime.now().strftime('%d%b%Y-%H:%M:%S')}")
         
         if disp_dt:
-            self._dt_fmt_ = {"d": 0, "h": 0, "m": 0, "s": round(self._dt_)}
+            self._dt_fmt_ = {"d": 0, "h": 0, "m": 0, "s": ceil(self._dt_)}
             if self._dt_fmt_["s"] > 60:
                 self._dt_fmt_["m"], self._dt_fmt_["s"] = divmod(
                     self._dt_fmt_["s"], 60
@@ -255,19 +255,11 @@ def write_xlsx(path, data, sheets = None, verbose = True,
     
     with pd.ExcelWriter(path, mode = "w", engine = "openpyxl") as xw:
         if isinstance(data, pd.DataFrame):                                     # write a single sheet
-            if sheets is None:
-                data.to_excel(xw, header = header, index = index)
-            else:
-                if isinstance(sheets, list):    sheets = sheets[0]
-                data.to_excel(xw, sheet_name = sheets, header = header, index = index)
+            sht = "Sheet1" if (sheets is None) else sheets[0]
+            data.to_excel(xw, sheet_name = sht, header = header, index = index)
         elif isinstance(data, dict):                                           
             if sheets is None:      sheets = list(data.keys())                 # use keys as sheet names
-            
-            if verbose:                                                        # print progress
-                for sht, df in tqdm(zip(sheets, data.values())):
-                    df.to_excel(xw, sheet_name = sht, header = header, index = index)
-            else:
-                for sht, df in zip(sheets, data.values()):
-                    df.to_excel(xw, sheet_name = sht, header = header, index = index)
-    
+            for sht, data in tqdm(zip(sheets, data.values()), total = len(sheets), 
+                                  disable = not(verbose)):                     # print progress
+                data.to_excel(xw, sheet_name = sht, header = header, index = index)
     

@@ -20,14 +20,14 @@ if _mpath_ not in sys.path:
 
 import numpy as np, pandas as pd, pickle
 import matplotlib.pyplot as plt, seaborn as sns
+from functools import reduce
+from operator import add
 from scipy.stats import mannwhitneyu
 from sklearn.metrics import RocCurveDisplay
-from warnings import filterwarnings
 
 
 #%% functions.
 
-## load model predictions from saved pickle.
 def read_pkl_data(data_path):
     with open(data_path, mode = "rb") as file:
         data_obj  = pickle.load(file)
@@ -40,7 +40,6 @@ def read_pkl_data(data_path):
     return y_test, y_pred, th_test, perf_test
 
 
-## add p-values to boxplots / violin plots.
 def add_stat(ax, stats, data, x, y, yloc = 0.05, lines = True, lw = 2, 
              align = True, fontdict = None):
     if fontdict is None:
@@ -70,7 +69,6 @@ def add_stat(ax, stats, data, x, y, yloc = 0.05, lines = True, lw = 2,
     return ax
 
 
-## make a group of violin plots.
 def make_violinplot(data, x, y, hue, ax, orient = "v", stats = None, 
                     dodge = True, split = False, fill = True, order = None, 
                     hue_order = None, statloc = 0.35, statline = False, 
@@ -137,7 +135,6 @@ def make_violinplot(data, x, y, hue, ax, orient = "v", stats = None,
     return ax
 
 
-## make a ROC curve for a given set of labels & preds.
 def make_roc_plot(data, label, pred, group, ax, title = None, 
                   fill = False, alpha = 0.4, colors = None, fontdict = None):
     ## plot parameters.
@@ -194,7 +191,6 @@ def make_roc_plot(data, label, pred, group, ax, title = None,
     return ax
 
 
-## make horizontal lollipops for feature importance.
 def make_lollipop_plot(data, x, y, ax, size = 150, yticks = "left", 
                        colors = None, title = None, xlabel = None, 
                        offset = 0.035, fontdict = None):
@@ -226,6 +222,9 @@ def make_lollipop_plot(data, x, y, ax, size = 150, yticks = "left",
     ax.axvline(x = 0, ymin = 0, ymax = 1, **baseprop)
     ax.invert_yaxis();                                                         # top-to-bottom by importance
     sns.despine(ax = ax, offset = 0, trim = False, top = False, right = False);
+    # sns.despine(ax = ax, offset = 0, trim = False, 
+    #             left = (yticks.lower() == "right"), 
+    #             right = (yticks.lower() == "left"));
     
     
     ## format axis ticks & legends.
@@ -234,6 +233,8 @@ def make_lollipop_plot(data, x, y, ax, size = 150, yticks = "left",
         plt.tick_params(axis = "y", left = False, right = True, 
                         labelleft = False, labelright = True);
     
+    ax.set_xticks(np.arange(-0.9, 1.0, 0.3));
+    ax.set_xlim([-0.95, 0.95])
     ax.set_xlabel(xlabel, labelpad = 8, **fontdict["label"]);
     ax.tick_params(axis = "both", labelsize = fontdict["label"]["size"]);
     
@@ -242,11 +243,9 @@ def make_lollipop_plot(data, x, y, ax, size = 150, yticks = "left",
     return ax
 
 
-## make barplots with continuation (for diagnostic odds ratio).
-## cut plot at maxplt & add dots to indicate continuation.
-def make_dot_barplot(data, x, y, ax, maxplt = None, dgts = 1, width = 0.5, 
-                     xrot = 0, xlabel = None, ylabel = None, title = None, 
-                     color = None, fontdict = None):
+def make_barplot1(data, x, y, ax, maxplt = None, dgts = 1, width = 0.5, 
+                  xrot = 0, xlabel = None, ylabel = None, title = None, 
+                  color = None, fontdict = None):
     ## plot parameters. 
     if fontdict is None:
         fontdict = {
@@ -268,8 +267,7 @@ def make_dot_barplot(data, x, y, ax, maxplt = None, dgts = 1, width = 0.5,
         data_plt[y] = np.where(data[y] > maxplt, maxplt, data[y])              # bound data to maxplt
     
     if maxplt is not None:
-        bar_lbls = data[y].round(
-            dgts).map(                                        # formatted bar labels
+        bar_lbls = data[y].round(dgts).map(                                        # formatted bar labels
             lambda val: ("$\\bf\infty$" if np.isinf(val) else str(val)) + 
                         ("\n" * 2 if val > maxplt else "")).tolist()
     else:
@@ -297,6 +295,7 @@ def make_dot_barplot(data, x, y, ax, maxplt = None, dgts = 1, width = 0.5,
     
     
     ## format axes & legends.
+    # ax.set_xlim([-0.7, data[x].nunique() - 0.3]);
     if maxplt is not None:
         ax.set_ylim([0, maxplt + 0.5]);
         ax.set_yticks(np.arange(0, int(maxplt + 1)).round(1));
@@ -312,7 +311,6 @@ def make_dot_barplot(data, x, y, ax, maxplt = None, dgts = 1, width = 0.5,
     ax.tick_params(axis = "both", labelsize = fontdict["label"]["size"]);
     ax.set_xlabel(xlabel, labelpad = 6, **fontdict["label"]);
     ax.set_ylabel(ylabel, labelpad = 6, **fontdict["label"]);
-    
     ax.set_title(title, wrap = True, pad = 8, y = 1.12, **fontdict["title"]);
     
     return ax
@@ -320,12 +318,13 @@ def make_dot_barplot(data, x, y, ax, maxplt = None, dgts = 1, width = 0.5,
 
 #%% read data.
 
-filterwarnings(action = "ignore")                                              # suppress version-warning- uncomment to debug if error shows
-
 data_path = "../../data/TransNEO/transneo_analysis/mdl_data/"
 data_file = ["transneo_lirics_predictions_chemo_filteredCCI_th0.99_RF_allfeatures_5foldCV_25Mar2023.pkl", 
              "tn_valid_lirics_predictions_chemo_filteredCCI_th0.99_RF_allfeatures_3foldCV_25Mar2023.pkl", 
              "brightness_lirics_predictions_chemo_filteredCCI_th0.99_RF_allfeatures_3foldCV_25Mar2023.pkl", 
+             "transneo_predictions_chemo_th0.99_ENS2_25features_5foldCV_20Mar2023.pkl", 
+             "tn_valid_predictions_chemo_th0.99_ENS2_25features_3foldCVtune_23Mar2023.pkl", 
+             "brightness_predictions_chemo_th0.99_ENS2_25features_3foldCVtune_23Mar2023.pkl", 
              "transneo_lirics_feature_importance_chemo_filteredCCI_th0.99_RF_allfeatures_5foldCV_25Mar2023.xlsx", 
              "tn_valid_lirics_feature_importance_chemo_filteredCCI_th0.99_RF_allfeatures_3foldCV_25Mar2023.xlsx", 
              "brightness_lirics_feature_importance_chemo_filteredCCI_th0.99_RF_allfeatures_3foldCV_25Mar2023.xlsx", 
@@ -334,84 +333,53 @@ data_file = ["transneo_lirics_predictions_chemo_filteredCCI_th0.99_RF_allfeature
              "brightness_lirics_predictions_chemo_allCCI_RF_allfeatures_3foldCV_25Mar2023.pkl"]
 
 
-## CCI-specific predictions.
-y_test_cci_tn, y_pred_cci_tn, th_test_cci_tn, \
-    perf_test_cci_tn = read_pkl_data(data_path + data_file[0])
+## cci-specific predictions.
+cclr = "ramilowski"
 
-y_test_cci_tn_val, y_pred_cci_tn_val, th_test_cci_tn_val, \
-    perf_test_cci_tn_val = read_pkl_data(data_path + data_file[1])
+(y_test_cci_tn, y_pred_cci_tn, th_test_cci_tn, 
+ perf_test_cci_tn) = read_pkl_data(data_path + data_file[0])
 
-y_test_cci_bn, y_pred_cci_bn, th_test_cci_bn, \
-    perf_test_cci_bn = read_pkl_data(data_path + data_file[2])
+(y_test_cci_tn_val, y_pred_cci_tn_val, th_test_cci_tn_val, 
+ perf_test_cci_tn_val) = read_pkl_data(data_path + data_file[1])
+
+(y_test_cci_bn, y_pred_cci_bn, th_test_cci_bn, 
+ perf_test_cci_bn) = read_pkl_data(data_path + data_file[2])
+
+
+## cell-type-specific predictions.
+(y_test_exp_tn, y_pred_exp_tn, th_test_exp_tn, 
+ perf_test_exp_tn) = read_pkl_data(data_path + data_file[3])
+
+(y_test_exp_tn_val, y_pred_exp_tn_val, th_test_exp_tn_val, 
+ perf_test_exp_tn_val) = read_pkl_data(data_path + data_file[4])
+
+(y_test_exp_bn, y_pred_exp_bn, th_test_exp_bn, 
+ perf_test_exp_bn) = read_pkl_data(data_path + data_file[5])
 
 
 ## cci importances.
-feat_imp_tn     = pd.read_excel(data_path + data_file[3], header = 0, 
-                                index_col = 0)
-feat_imp_tn_val = pd.read_excel(data_path + data_file[4], header = 0, 
-                                index_col = 0)
-feat_imp_bn     = pd.read_excel(data_path + data_file[5], header = 0, 
-                                index_col = 0)
+feat_imp_tn     = pd.read_excel(
+    data_path + data_file[6], header = 0, index_col = 0)
+
+feat_imp_tn_val = pd.read_excel(
+    data_path + data_file[7], header = 0, index_col = 0)
+
+feat_imp_bn     = pd.read_excel(
+    data_path + data_file[8], header = 0, index_col = 0)
 
 
-## CCI-specific predictions for all CCIs.
-y_test_cci_all_tn, y_pred_cci_all_tn, th_test_cci_all_tn, \
-    perf_test_cci_all_tn = read_pkl_data(data_path + data_file[6])
+## cci-specific predictions for all ccis.
+(y_test_cci_all_tn, y_pred_cci_all_tn, th_test_cci_all_tn, 
+ perf_test_cci_all_tn) = read_pkl_data(data_path + data_file[9])
 
-y_test_cci_all_tn_val, y_pred_cci_all_tn_val, th_test_cci_all_tn_val, \
-    perf_test_cci_all_tn_val = read_pkl_data(data_path + data_file[7])
+(y_test_cci_all_tn_val, y_pred_cci_all_tn_val, th_test_cci_all_tn_val, 
+ perf_test_cci_all_tn_val) = read_pkl_data(data_path + data_file[10])
 
-y_test_cci_all_bn, y_pred_cci_all_bn, th_test_cci_all_bn, \
-    perf_test_cci_all_bn = read_pkl_data(data_path + data_file[8])
+(y_test_cci_all_bn, y_pred_cci_all_bn, th_test_cci_all_bn, 
+ perf_test_cci_all_bn) = read_pkl_data(data_path + data_file[11])
 
 
 #%% prepare data for fig 4.
-
-cclr = "ramilowski"                                                            # L-R database to use
-
-
-def get_pred_data(y_true, y_pred, ds = None):
-    ## build score matrix.
-    score_data = pd.DataFrame({
-        "Response": y_true.replace(to_replace = {1: "R", 0: "NR"}), 
-        "score"   : y_pred.astype(float)})
-    
-    if ds is not None:
-        score_data.insert(
-            loc = 1, column = "Dataset", value = ds)
-    
-    ## perform R vs. NR wilcoxon test.
-    score_stat = score_data.pipe(
-        lambda df: pd.Series(mannwhitneyu(
-            df.score[df.Response.eq("R")], df.score[df.Response.eq("NR")], 
-            alternative = "greater", nan_policy = "omit"), 
-            index = ["U1", "pval"]))
-    
-    score_stat["annot"] = ("***" if (score_stat.pval <= 0.001) else 
-                           "**" if (score_stat.pval <= 0.01) else 
-                           "*" if (score_stat.pval <= 0.05) else 
-                           "ns")
-    
-    return score_data, score_stat
-    
-
-def get_cci_importance(data, n_top = 10):
-    ## format CCI labels & signed importances.
-    imp_data = pd.DataFrame({
-        "CCI": data.index.map(
-            lambda x: x.replace(
-                "-", "$-$").replace(
-                "::", "$::$").replace(
-                "_", " ")), 
-        "imp": data.MDI * (2 * data.Direction.gt(0) - 1) })
-    
-    if n_top is not None:
-        imp_data = imp_data[:n_top]
-    
-    imp_data.reset_index(drop = True, inplace = True)
-    
-    return imp_data
-
 
 ## dataset info.
 ds_info = pd.DataFrame(
@@ -423,62 +391,73 @@ ds_info["label"] = ds_info.apply(
     lambda df: f"{df.Dataset} (n = {df.n})", axis = 1).tolist()
 
 
-## init data list for fig 4-I: panels A-F.
-fig_data4_I = [[ ] for _ in range(6)]
-
 ## get data for fig 4A.
-fig_data4_I[0] = [[ ] for _ in range(len(ds_info))]                            # R vs. NR scores
-fig_stat4_I    = fig_data4_I[0].copy()                                         # R vs. NR p-values
+y_test_cci_all = pd.DataFrame({
+    "Response": pd.concat(
+        [y_test_cci_tn, y_test_cci_tn_val, y_test_cci_bn], axis = 0).replace(
+        to_replace = {1: "R", 0: "NR"}),     
+    "Dataset" : reduce(add, ds_info.apply(
+        lambda df: [df.label] * df.n, axis = 1)) })
 
-fig_data4_I[0][0], fig_stat4_I[0] = get_pred_data(
-    y_true = y_test_cci_tn, 
-    y_pred = y_pred_cci_tn[cclr], 
-    ds     = ds_info.label[0])
+y_pred_cci_all = pd.concat(
+    [y_pred_cci_tn[cclr], y_pred_cci_tn_val[cclr], y_pred_cci_bn[cclr]], 
+    axis = 0).rename(
+    index = "score")
 
-fig_data4_I[0][1], fig_stat4_I[1] = get_pred_data(
-    y_true = y_test_cci_tn_val, 
-    y_pred = y_pred_cci_tn_val[cclr], 
-    ds     = ds_info.label[1])
+fig_data4A    = pd.concat([y_test_cci_all, y_pred_cci_all], axis = 1)
 
-fig_data4_I[0][2], fig_stat4_I[2] = get_pred_data(
-    y_true = y_test_cci_bn, 
-    y_pred = y_pred_cci_bn[cclr], 
-    ds     = ds_info.label[2])
-
-fig_data4_I[0] = pd.concat(fig_data4_I[0], axis = 0)
-fig_data4_I[0].Dataset = fig_data4_I[0].Dataset.map(
-    lambda x: x.replace(" (", "\n("))
-fig_stat4_I    = pd.concat(fig_stat4_I, axis = 1, 
-                           keys = fig_data4_I[0].Dataset.unique()).T
+fig_stat4A = fig_data4A.groupby(
+    by = "Dataset", sort = False).apply(
+    lambda df: pd.Series(mannwhitneyu(
+        df.score[df.Response.eq("R")], df.score[df.Response.eq("NR")], 
+        alternative = "greater", nan_policy = "omit"), 
+        index = ["U1", "pval"]), 
+    include_groups = False)
+fig_stat4A["annot"] = fig_stat4A.pval.map(
+    lambda p: ("***" if (p <= 0.001) else "**" if (p <= 0.01) else 
+               "*" if (p <= 0.05) else "ns"))
 
 
 ## get data for fig 4B.
-fig_data4_I[1] = fig_data4_I[0].replace(
-    to_replace = {"Response": {"R": 1, "NR": 0}, 
-                  "Dataset" : {ds.replace(" (", "\n("): ds 
-                               for ds in ds_info.label}}).infer_objects(
+fig_data4B = fig_data4A.replace(
+    to_replace = {"Response": {"R": 1, "NR": 0}}).infer_objects(
     copy = False)
 
 
 ## get data for fig 4C-D.
-for k, met in enumerate(["AP", "DOR"], start = 2):
-    fig_data4_I[k] = pd.DataFrame([
-        {"Dataset": ds.replace(" (", "\n("), 
-         "score"  : perf.loc[cclr, met]}        
-        for ds, perf in zip(ds_info.label, [perf_test_cci_tn, 
-                                            perf_test_cci_tn_val, 
-                                            perf_test_cci_bn])])
+metrics_CD  = ["AP", "DOR"]
+fig_data4CD = pd.concat(
+    [perf_test_cci_tn.loc[cclr, metrics_CD], 
+     perf_test_cci_tn_val.loc[cclr, metrics_CD], 
+     perf_test_cci_bn.loc[cclr, metrics_CD]], 
+    axis = 1, keys = ds_info.label).T.rename(
+    index = lambda x: x.replace(" (", "\n(")).reset_index(
+    names = "Dataset")
 
 
-## get data for fig 4E-F.
-n_top  = 10                                                                    # keep only top CCIs
-for k, dat in enumerate([feat_imp_tn_val, feat_imp_bn], start = 4):
-    fig_data4_I[k] = get_cci_importance(data = dat, n_top = n_top)
+## get data for fig. 4E-F.
+def get_cci_data(feat_imp, n_top = 10):
+    cci_imp = pd.DataFrame({
+        "CCI": feat_imp.index.map(
+            lambda x: x.replace("-", "$-$").replace(
+                "::", "$::$").replace("_", " ")), 
+        "MDI": feat_imp.apply(
+            lambda df: df.MDI * (1 if df.Direction > 0 else -1), axis = 1) })
+    
+    cci_imp = cci_imp.reset_index(drop = True)[:n_top]
+    
+    return cci_imp
+
+
+## feature importances.
+n_top      = 10                                                                # keep only top CCIs
+fig_data4E = get_cci_data(feat_imp = feat_imp_tn_val, n_top = n_top)
+fig_data4F = get_cci_data(feat_imp = feat_imp_bn, n_top = n_top)
 
 
 #%% make fig. 4-I.
 
-svdat = False                                                                  # set as True to save data
+svdat = False
 
 ## plot parameters.
 sns.set_style("ticks")
@@ -501,84 +480,90 @@ label_fonts  = {"weight": "regular", "size": 14, "color": "#000000"}
 legend_fonts = {"item" : {"size": 12, "weight": "regular"}, 
                 "title": {"size": 16, "weight": "bold"}}
 
-baseprop     = {"ls": "--", "lw": 2.5, "color": colors[-1]}
-
-## violin plots + ROC plots + barplots.
-fig_llocs4   = [[0.18, 0.49], [0.96, 0.67, 0.34]]
-fig_ploc4    = 0.2
-fig_ylim4    = 0.3
-fig_maxplt4  = [None, 4.5]
-fig_dotsize4 = 100
-fig_offset4  = {"base": 0.35, "dot": 0.035}
-fig_ttls4    = ["AP", "Diagnostic odds ratio"]
-fig_colors4  = [colors[4], colors[3], colors[5], colors[-1]]
-
+## all plots.
 fig4_I, ax4_I = plt.subplots(figsize = (18, 12), nrows = 3, ncols = 2, 
                              height_ratios = [0.8, 0.8, 1.0])
 ax4_I = dict(zip(list("ABCDEF"), ax4_I.ravel()))
 
+fig_llocs4 = [[0.18, 0.49], [0.96, 0.67, 0.34]]
 
 ## make violins.
-ax = ax4_I["A"]
-ax = make_violinplot(data = fig_data4_I[0], x = "Dataset", y = "score", 
-                     hue = "Response", stats = fig_stat4_I, 
-                     hue_order = ["R", "NR"], inner = "quart", split = True, 
-                     dodge =  True, statloc = fig_ploc4, statline = False, 
-                     title = "Prediction score", legend_vert = True, 
-                     legend_out = False, legend_title = "Response", ax = ax)
-ax.set_ylim([0 - fig_ylim4, 1 + fig_ylim4])
-ax.set_yticks(np.arange(0, 1.2, 0.2).round(1));
-ax.get_legend().set(bbox_to_anchor = (-0.50, 0.25));
-fig4_I.text(x = fig_llocs4[0][0], y = fig_llocs4[1][0], s = "A", 
-            **panel_fonts);                                                    # add panel label
+fig_ylim4A = 0.3;   fig_ploc4A = 0.2
+
+ax4_I["A"] = make_violinplot(data = fig_data4A, x = "Dataset", y = "score", 
+                             hue = "Response", stats = fig_stat4A, 
+                             hue_order = ["R", "NR"], inner = "quart", 
+                             split = True, dodge =  True, statloc = fig_ploc4A, 
+                             statline = False, title = "Prediction score", 
+                             legend_vert = True, legend_out = False, 
+                             legend_title = "Response", ax = ax4_I["A"])
+ax4_I["A"].set_ylim([0 - fig_ylim4A, 1 + fig_ylim4A]);
+ax4_I["A"].set_yticks(ticks  = np.arange(0, 1.2, 0.2), 
+                      labels = np.arange(0, 1.2, 0.2));
+ax4_I["A"].yaxis.set_major_formatter("{x:0.1f}");
+ax4_I["A"].set_xticks(ticks  = range(len(ds_info)), 
+                      labels = ds_info.label.map(
+                          lambda x: x.replace(" (", "\n(")));
+ax4_I["A"].tick_params(axis = "both", labelsize = 12);
+ax4_I["A"].get_legend().set_bbox_to_anchor([-0.50, 0.25, 0.4, 0.4]);
+fig4_I.text(x = fig_llocs4[0][0], y = fig_llocs4[1][0], s = "A", **panel_fonts);
 
 
-## make ROC curves.
-ax = ax4_I["B"]
-ax = make_roc_plot(data = fig_data4_I[1], label = "Response", pred = "score", 
-                   group = "Dataset", colors = fig_colors4, fill = True, 
-                   alpha = 0.15, title = "ROC curve", ax = ax)
-fig4_I.text(x = fig_llocs4[0][1], y = fig_llocs4[1][0], s = "B", 
-            **panel_fonts);                                                    # add panel label
+## make roc curves.
+fig_colors4B = [colors[4], colors[3], colors[5], colors[-1]]
+
+ax4_I["B"]   = make_roc_plot(data = fig_data4B, label = "Response", 
+                             pred = "score", group = "Dataset", 
+                             colors = fig_colors4B, fill = True, 
+                             alpha = 0.15, title = "AUC", ax = ax4_I["B"])
+fig4_I.text(x = fig_llocs4[0][1], y = fig_llocs4[1][0], s = "B", **panel_fonts);
 
 
-## make bars with dots to indicate continuation.
-for k, lbl in enumerate(list("CD"), start = 2):
-    ax = ax4_I[lbl]
-    ax = make_dot_barplot(data = fig_data4_I[k], x = "Dataset", y = "score", 
-                          width = 0.3, maxplt = fig_maxplt4[k - 2], dgts = 2, 
-                          title = fig_ttls4[k - 2], color = fig_colors4[1], 
-                          ax = ax)
-    
-    ## add baselines.
-    if lbl == "C":                                                             # AP
-        ax.set_ylim([0, 1.1])
-        ax.hlines(y = ds_info.apply(lambda x: x.R / x.n, axis = 1).values, 
-                  xmin = np.arange(len(ds_info)) - fig_offset4["base"], 
-                  xmax = np.arange(len(ds_info)) + fig_offset4["base"], 
+## make barplots.
+fig_color4CD = colors[3]
+base_off     = 0.35
+baseprop     = {"ls": "--", "lw": 2.5, "color": colors[-1]}
+
+ax4_I["C"]   = make_barplot1(data = fig_data4CD, x = "Dataset", y = "AP", 
+                             maxplt = None, dgts = 2, width = 0.3, title = "AP", 
+                             color = fig_color4CD, ax = ax4_I["C"])
+ax4_I["C"].hlines(y = ds_info.apply(lambda x: x.R / x.n, axis = 1).values,     # add baselines
+                  xmin = np.arange(fig_data4CD.shape[0]) - base_off, 
+                  xmax = np.arange(fig_data4CD.shape[0]) + base_off, 
                   **baseprop)
-    else:                                                                      # DOR
-        ax.set_xlim([-0.5, len(ds_info) - 0.5])
-        ax.axhline(y = 1.0, xmin = 0, xmax = 0.99, **baseprop)
-    
-    fig4_I.text(x = fig_llocs4[0][k - 2], y = fig_llocs4[1][1], s = lbl, 
-                **panel_fonts);                                                # add panel label
+ax4_I["C"].set_ylim([0, 1.1]);
+fig4_I.text(x = fig_llocs4[0][0], y = fig_llocs4[1][1], s = "C", **panel_fonts);
 
 
-## make lollipops.
-fig_colors4 = [colors[k] for k in [3, -3, -1]]
-for k, lbl in enumerate(list("EF"), start = 4):
-    ax = ax4_I[lbl]
-    ax = make_lollipop_plot(data = fig_data4_I[k], x = "imp", y = "CCI", 
-                            size = fig_dotsize4, offset = fig_offset4["dot"], 
-                            colors = fig_colors4, title = ds_info.label[k - 3], 
-                            xlabel = "Feature importance (signed)", 
-                            yticks = "left" if (lbl == "E") else "right", 
-                            ax = ax)
-    ax.set_xticks(np.arange(-0.9, 1.0, 0.3));
-    ax.set_xlim([-0.95, 0.95])
-    fig4_I.text(x = fig_llocs4[0][k - 4], y = fig_llocs4[1][2], s = lbl, 
-                **panel_fonts);                                                # add panel label
+ax4_I["D"]   = make_barplot1(data = fig_data4CD, x = "Dataset", y = "DOR", 
+                             maxplt = 4.5, width = 0.3, 
+                             title = "Diagnostic odds ratio", 
+                             color = fig_color4CD, ax = ax4_I["D"])
+ax4_I["D"].axhline(y = 1.0, xmin = 0, xmax = 0.99, **baseprop)
+ax4_I["D"].set_xlim([-0.5, fig_data4CD.shape[0] - 0.5]);
+fig4_I.text(x = fig_llocs4[0][1], y = fig_llocs4[1][1], s = "D", **panel_fonts);
+
+
+## make lollipop plots.
+fig_size4EF   = 100
+fig_off4EF    = 0.035
+fig_xlbl4EF   = "Feature importance (signed)"
+fig_ttls4EF   = ds_info.label.iloc[1:].tolist()
+fig_colors4EF = [colors[3], colors[-3], colors[-1]]
+
+ax4_I["E"] = make_lollipop_plot(data = fig_data4E, x = "MDI", y = "CCI", 
+                                size = fig_size4EF, offset = fig_off4EF, 
+                                colors = fig_colors4EF, title = fig_ttls4EF[0], 
+                                xlabel = fig_xlbl4EF, yticks = "left", 
+                                ax = ax4_I["E"])
+fig4_I.text(x = fig_llocs4[0][0], y = fig_llocs4[1][2], s = "E", **panel_fonts);
+
+ax4_I["F"] = make_lollipop_plot(data = fig_data4F, x = "MDI", y = "CCI", 
+                                size = fig_size4EF, offset = fig_off4EF, 
+                                colors = fig_colors4EF, title = fig_ttls4EF[1], 
+                                xlabel = fig_xlbl4EF, yticks = "right", 
+                                ax = ax4_I["F"])
+fig4_I.text(x = fig_llocs4[0][1], y = fig_llocs4[1][2], s = "F", **panel_fonts);
 
 fig4_I.tight_layout(h_pad = 2, w_pad = 4)
 plt.show()
@@ -591,62 +576,58 @@ if svdat:
     
     fig_file4_I = "all_predictions_cci_validation_chemo_th0.99_RF_allfeatures_5foldCV_v2.pdf"
     fig4_I.savefig(fig_path + fig_file4_I, dpi = 600)
-    print(fig_file4_I)
 
 
-#%% make supplementary figs.
-#%% prepare data for supp fig 6.
+#%% prepare data for supp. fig. 6.
 
-## init data list for fig 6-I: panels A-D.
-fig_dataS6_I, fig_statS6_I = [[ ] for _ in range(4)], [ ]
+## get data for supp. fig. 6A.
+y_test_cci_all_all = pd.DataFrame({
+    "Response": pd.concat(
+        [y_test_cci_all_tn, y_test_cci_all_tn_val, y_test_cci_all_bn], 
+        axis = 0).replace(
+        to_replace = {1: "R", 0: "NR"}),     
+    "Dataset" : reduce(add, ds_info.apply(
+        lambda df: [df.label] * df.n, axis = 1)) })
 
-## get data for supp fig 6A.
-fig_dataS6_I[0] = [[ ] for _ in range(len(ds_info))]                           # R vs. NR scores
-fig_statS6_I    = fig_dataS6_I[0].copy()                                       # R vs. NR p-values
+y_pred_cci_all_all = pd.concat(
+    [y_pred_cci_all_tn[cclr], y_pred_cci_all_tn_val[cclr], 
+     y_pred_cci_all_bn[cclr]], axis = 0).rename(
+    index = "score")
 
-fig_dataS6_I[0][0], fig_statS6_I[0] = get_pred_data(
-    y_true = y_test_cci_tn, 
-    y_pred = y_pred_cci_all_tn[cclr], 
-    ds     = ds_info.label[0])
+fig_dataS6A = pd.concat([y_test_cci_all_all, y_pred_cci_all_all], axis = 1)
 
-fig_dataS6_I[0][1], fig_statS6_I[1] = get_pred_data(
-    y_true = y_test_cci_tn_val, 
-    y_pred = y_pred_cci_all_tn_val[cclr], 
-    ds     = ds_info.label[1])
-
-fig_dataS6_I[0][2], fig_statS6_I[2] = get_pred_data(
-    y_true = y_test_cci_bn, 
-    y_pred = y_pred_cci_all_bn[cclr], 
-    ds     = ds_info.label[2])
-
-fig_dataS6_I[0] = pd.concat(fig_dataS6_I[0], axis = 0)
-fig_dataS6_I[0].Dataset = fig_dataS6_I[0].Dataset.map(
-    lambda x: x.replace(" (", "\n("))
-fig_statS6_I    = pd.concat(fig_statS6_I, axis = 1, 
-                            keys = fig_dataS6_I[0].Dataset.unique()).T
+fig_statS6A = fig_dataS6A.groupby(
+    by = "Dataset", sort = False).apply(
+    lambda df: pd.Series(mannwhitneyu(
+        df.score[df.Response.eq("R")], df.score[df.Response.eq("NR")], 
+        alternative = "greater", nan_policy = "omit"), 
+        index = ["U1", "pval"]), 
+    include_groups = False)
+fig_statS6A["annot"] = fig_statS6A.pval.map(
+    lambda p: ("***" if (p <= 0.001) else "**" if (p <= 0.01) else 
+               "*" if (p <= 0.05) else "ns"))
 
 
-## get data for supp fig 6B.
-fig_dataS6_I[1] = fig_dataS6_I[0].replace(
-    to_replace = {"Response": {"R": 1, "NR": 0}, 
-                  "Dataset" : {ds.replace(" (", "\n("): ds 
-                               for ds in ds_info.label}}).infer_objects(
+## get data for supp. fig. 6B.
+fig_dataS6B = fig_dataS6A.replace(
+    to_replace = {"Response": {"R": 1, "NR": 0}}).infer_objects(
     copy = False)
 
 
-## get data for supp fig 6C-D.
-for k, met in enumerate(["AP", "DOR"], start = 2):
-    fig_dataS6_I[k] = pd.DataFrame([
-        {"Dataset": ds.replace(" (", "\n("), 
-         "score"  : perf.loc[cclr, met]}        
-        for ds, perf in zip(ds_info.label, [perf_test_cci_all_tn, 
-                                            perf_test_cci_all_tn_val, 
-                                            perf_test_cci_all_bn])])
+## get data for supp. fig. 6C.
+metrics_CD   = ["AP", "DOR"]
+fig_dataS6CD = pd.concat(
+    [perf_test_cci_all_tn.loc[cclr, metrics_CD], 
+     perf_test_cci_all_tn_val.loc[cclr, metrics_CD], 
+     perf_test_cci_all_bn.loc[cclr, metrics_CD]], 
+    axis = 1, keys = ds_info.label).T.rename(
+    index = lambda x: x.replace(" (", "\n(")).reset_index(
+    names = "Dataset")
 
 
-#%% make supp fig 6-I.
+#%% make supp. fig. 6-I.
 
-svdat = False                                                                  # set as True to save data
+svdat = False
 
 ## plot parameters.
 sns.set_style("ticks")
@@ -669,66 +650,82 @@ label_fonts  = {"weight": "regular", "size": 14, "color": "#000000"}
 legend_fonts = {"item" : {"size": 12, "weight": "regular"}, 
                 "title": {"size": 16, "weight": "bold"}}
 
+fontdict     = {
+    "label": {"family": "sans", "size": 12, "weight": "regular"}, 
+    "title": {"family": "sans", "size": 16, "weight": "bold"}, 
+    "super": {"family": "sans", "size": 20, "weight": "bold"}}
 
-## violin plots + ROC plots + barplots.
-fig_llocsS6   = [[0.09, 0.42], [0.96, 0.45]]
-fig_plocS6    = 0.2
-fig_ylimS6    = 0.3
-fig_maxpltS6  = [None, 4.5]
-fig_dotsizeS6 = 100
-fig_offsetS6  = {"base": 0.35, "dot": 0.035}
-fig_ttlsS6    = ["AP", "Diagnostic odds ratio"]
-fig_colorsS6  = [colors[4], colors[3], colors[5], colors[-1]]
 
-figS6_I, axS6_I = plt.subplots(figsize = (16, 7), nrows = 2, ncols = 2)
+## all plots.
+figS6_I, axS6_I = plt.subplots(figsize = (16, 7), nrows = 2, ncols = 2, 
+                               height_ratios = [1, 1], width_ratios = [1, 1])
 axS6_I = dict(zip(list("ABCD"), axS6_I.ravel()))
 
+fig_llocsS6 = [[0.09, 0.42], [0.96, 0.45]]
 
 ## make violins.
-ax = axS6_I["A"]
-ax = make_violinplot(data = fig_dataS6_I[0], x = "Dataset", y = "score", 
-                     hue = "Response", stats = fig_statS6_I, 
-                     hue_order = ["R", "NR"], inner = "quart", split = True, 
-                     dodge =  True, statloc = fig_plocS6, statline = False, 
-                     title = "Prediction score", legend_vert = True, 
-                     legend_out = False, legend_title = "Response", ax = ax)
-ax.set_ylim([0 - fig_ylimS6, 1 + fig_ylimS6])
-ax.set_yticks(np.arange(0, 1.2, 0.2).round(1));
-ax.get_legend().set(bbox_to_anchor = (-0.50, 0.25));
+fig_ylimS6A = 0.3;   fig_plocS6A = 0.2
+
+axS6_I["A"] = make_violinplot(data = fig_dataS6A, x = "Dataset", y = "score", 
+                              hue = "Response", stats = fig_statS6A, 
+                              hue_order = ["R", "NR"], inner = "quart", 
+                              split = True, dodge =  True, 
+                              statloc = fig_plocS6A, statline = False, 
+                              title = "Prediction score", legend_vert = True, 
+                              legend_out = False, legend_title = "Response", 
+                              ax = axS6_I["A"])
+axS6_I["A"].set_ylim([0 - fig_ylimS6A, 1 + fig_ylimS6A]);
+axS6_I["A"].set_yticks(ticks  = np.arange(0, 1.2, 0.2), 
+                       labels = np.arange(0, 1.2, 0.2));
+axS6_I["A"].yaxis.set_major_formatter("{x:0.1f}");
+axS6_I["A"].set_xticks(ticks  = range(len(ds_info)), 
+                       labels = ds_info.label.map(
+                          lambda x: x.replace(" (", "\n(")));
+axS6_I["A"].tick_params(axis = "both", labelsize = 12);
+# axS6_I["A"].set_ylabel("Prediction score", **label_fonts);
+axS6_I["A"].get_legend().set_bbox_to_anchor([-0.50, 0.25, 0.4, 0.4]);
 figS6_I.text(x = fig_llocsS6[0][0], y = fig_llocsS6[1][0], s = "A", 
-             **panel_fonts);                                                   # add panel label
+            **panel_fonts);
 
 
-## make ROC curves.
-ax = axS6_I["B"]
-ax = make_roc_plot(data = fig_dataS6_I[1], label = "Response", pred = "score", 
-                   group = "Dataset", colors = fig_colorsS6, fill = True, 
-                   alpha = 0.15, title = "ROC curve", ax = ax)
+## make roc curves.
+fig_colorsS6B = [colors[4], colors[3], colors[5], colors[-1]]
+
+axS6_I["B"]   = make_roc_plot(data = fig_dataS6B, label = "Response", 
+                              pred = "score", group = "Dataset", 
+                              colors = fig_colorsS6B, fill = True, 
+                              alpha = 0.15, title = "AUC", ax = axS6_I["B"])
 figS6_I.text(x = fig_llocsS6[0][1], y = fig_llocsS6[1][0], s = "B", 
-             **panel_fonts);                                                   # add panel label
+             **panel_fonts);
 
 
-## make bars with dots to indicate continuation.
-for k, lbl in enumerate(list("CD"), start = 2):
-    ax = axS6_I[lbl]
-    ax = make_dot_barplot(data = fig_dataS6_I[k], x = "Dataset", y = "score", 
-                          width = 0.3, maxplt = fig_maxpltS6[k - 2], dgts = 2, 
-                          title = fig_ttlsS6[k - 2], color = fig_colorsS6[1], 
-                          ax = ax)
-    
-    ## add baselines.
-    if lbl == "C":                                                             # AP
-        ax.set_ylim([0, 1.1])
-        ax.hlines(y = ds_info.apply(lambda x: x.R / x.n, axis = 1).values, 
-                  xmin = np.arange(len(ds_info)) - fig_offsetS6["base"], 
-                  xmax = np.arange(len(ds_info)) + fig_offsetS6["base"], 
+## make barplots.
+fig_colorS6CD = colors[3]
+base_off       = 0.35
+baseprop       = {"ls": "--", "lw": 2.5, "color": colors[-1]}
+
+axS6_I["C"]    = make_barplot1(data = fig_dataS6CD, x = "Dataset", y = "AP", 
+                               maxplt = None, dgts = 2, width = 0.3, 
+                               title = "AP", color = fig_colorS6CD, 
+                               ax = axS6_I["C"])
+axS6_I["C"].hlines(y = ds_info.apply(lambda x: x.R / x.n, axis = 1).values,     # add baselines
+                  xmin = np.arange(fig_dataS6CD.shape[0]) - base_off, 
+                  xmax = np.arange(fig_dataS6CD.shape[0]) + base_off, 
                   **baseprop)
-    else:                                                                      # DOR
-        ax.set_xlim([-0.5, len(ds_info) - 0.5])
-        ax.axhline(y = 1.0, xmin = 0, xmax = 0.99, **baseprop)
-    
-    figS6_I.text(x = fig_llocsS6[0][k - 2], y = fig_llocsS6[1][1], s = lbl, 
-                 **panel_fonts);                                               # add panel label
+axS6_I["C"].set_ylim([0, 1.1]);
+figS6_I.text(x = fig_llocsS6[0][0], y = fig_llocsS6[1][1], s = "C", 
+             **panel_fonts);
+
+
+axS6_I["D"]   = make_barplot1(data = fig_dataS6CD, x = "Dataset", y = "DOR", 
+                              maxplt = 4.5, width = 0.3, 
+                              title = "Diagnostic odds ratio", 
+                              color = fig_colorS6CD, ax = axS6_I["D"])
+axS6_I["D"].axhline(y = 1.0, xmin = 0, xmax = 0.99, **baseprop)
+axS6_I["D"].set_xlim([-0.5, fig_dataS6CD.shape[0] - 0.5]);
+figS6_I.text(x = fig_llocsS6[0][1], y = fig_llocsS6[1][1], s = "D", 
+             **panel_fonts);
+
 
 figS6_I.tight_layout(h_pad = 2, w_pad = 4)
 plt.show()
@@ -741,5 +738,4 @@ if svdat:
     
     fig_fileS6_I = "all_predictions_cci_all_cell_types_chemo_th0.99_RF_allfeatures_5foldCV_v2.pdf"
     figS6_I.savefig(fig_path + fig_fileS6_I, dpi = 600)
-    print(fig_fileS6_I)
 

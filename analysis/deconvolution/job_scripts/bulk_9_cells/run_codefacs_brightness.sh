@@ -1,8 +1,9 @@
 #!/bin/bash
-#SBATCH --time=48:00:00
 #SBATCH --mem=80g
+#SBATCH --time=48:00:00
+#SBATCH --partition=norm
 #SBATCH --gres=lscratch:20
-#SBATCH --partition=ccr
+#SBATCH --output=job_codefacs_brightness_%j.out
 #SBATCH --mail-type=BEGIN,END,TIME_LIMIT_50,TIME_LIMIT_80,FAIL
 
 
@@ -11,14 +12,13 @@
 ## get necessary variables.
 ## directories.
 PROJ="/data/Lab_ruppin/projects/TME_contribution_project";
-ODIR="$PROJ/data/TransNEO";
+ODIR="$PROJ/data/BrighTNess";
 RUN_CF="$PROJ/analysis/CODEFACS/CODEFACS2/scripts";
-ODIR_CF="$RUN_CF/CODEFACS_results";
+ODIR_CF="$RUN_CF/out_codefacs_brightness_v2";
 
 ## data files.
-BULK="$ODIR/transneo-diagnosis-RNAseq-TPM_SRD_26May2022.tsv";
+BULK="$ODIR/GSE164458_BrighTNess_RNAseq_TPM_v2_SRD_09Oct2022.csv";
 SIGN="$PROJ/data/celltype_signature/signature_scSigR_BRCA.csv";
-
 
 ## create output directories.
 if [ ! -d "$ODIR_CF" ]; then
@@ -45,3 +45,4 @@ echo "copying CODEFACS output to output directory: $ODIR... "
 cp -r $ODIR_CF $ODIR
 
 echo "done!"
+

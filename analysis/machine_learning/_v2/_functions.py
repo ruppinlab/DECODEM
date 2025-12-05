@@ -9,8 +9,9 @@ Created on Thu Aug 18 15:11:28 2022
 import numpy as np, pandas as pd
 import matplotlib.pyplot as plt, seaborn as sns
 from math import nan, inf, ceil
-from scipy.stats import mannwhitneyu, ttest_ind_from_stats
+from scipy.stats import hmean, gmean, mannwhitneyu, ttest_ind_from_stats
 from itertools import combinations
+# from statannotations.Annotator import Annotator
 from sklearn.base import (BaseEstimator, RegressorMixin, 
                           TransformerMixin, clone)
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
@@ -25,7 +26,8 @@ from sklearn.metrics import (roc_auc_score, average_precision_score,
                              PrecisionRecallDisplay)
 from sklearn.model_selection import StratifiedKFold, KFold, RandomizedSearchCV
 from sklearn.pipeline import Pipeline
-from warnings import filterwarnings
+# from sklearnex import patch_sklearn, unpatch_sklearn
+# patch_sklearn()
 
 
 #%% classifiers.
@@ -120,8 +122,7 @@ class MakeClassifier:
 #%% pipeline functions.
 
 def train_pipeline(model, train_data, max_features = 20, var_th = 0.1, 
-                   cv_tune = None, mdl_seed = 86420, tune_seed = 84, 
-                   scoring = "roc_auc"):
+                   cv_tune = None, mdl_seed = 86420, tune_seed = 84):
     ## make pipeline.
     clf_obj = MakeClassifier(model = model, random_state = mdl_seed)
     pipe = Pipeline([
@@ -147,10 +148,9 @@ def train_pipeline(model, train_data, max_features = 20, var_th = 0.1,
     if cv_tune is None:
         cv_tune = StratifiedKFold(n_splits = 3, shuffle = True, 
                                   random_state = 4)
-    
-    filterwarnings(action = "ignore")                                          # suppress fit failing/convergence warnings
+        
     grid = RandomizedSearchCV(
-        pipe, params, scoring = scoring, n_iter = 20, cv = cv_tune, 
+        pipe, params, scoring = "roc_auc", n_iter = 20, cv = cv_tune, 
         refit = True, n_jobs = -1, random_state = tune_seed, verbose = 1, 
         return_train_score = True
     )
@@ -167,6 +167,69 @@ def predict_proba_scaled(pipe, X, scale = True):
         y_score = MinMaxScaler().fit_transform(y_score)
     
     return y_score
+
+
+#%% pipelines.
+
+class MakePipeline:
+    def __init__(self, model, random_state = 86420, max_features = 20, var_th = 0.1):
+        self.model = model
+        self.random_state = random_state
+        self.max_features = max_features
+        self.var_th = var_th
+    
+    def build_pipe(self):
+        # make pipeline.
+        self.clf_obj_ = MakeClassifier(
+            model = self.model, random_state = self.random_state
+        )
+    
+        self.pipe = Pipeline([
+            ("var_filter", VarianceThreshold(threshold = self.var_th)), 
+            ("selector",   SelectKBest(score_func = f_classif)), 
+            ("normalizer", StandardScaler()), 
+            ("classifier", self.clf_obj_.get_model())
+        ])
+        
+        # get parameters to tune.
+        self.params = { }
+        self.params["selector__k"] = np.arange(2, self.max_features + 1, 1)
+        self.params.update({
+            f"classifier__{pn}": pv for pn, pv in self.clf_obj_.get_param().items()
+        })
+        
+        return self
+    
+    def get_pipe(self):
+        self.build_pipe()
+        return self.pipe, self.params
+    
+    def fit(self, X, y, score = "roc_auc", n_iter = 20, cv = None, random_state = 84):
+        self.score_ = score
+        self.n_iter_ = n_iter
+        self.tune_seed_ = random_state
+        if cv is None:
+            self.cv_seed_ = 4
+            self.cv_tune_ = StratifiedKFold(
+                n_splits = 3, shuffle = True, random_state = self.cv_seed_
+            )
+        else:
+            self.cv_tune_ = cv
+        
+        # make pipeline.
+        self.build_pipe()
+        
+        # tune pipeline.
+        self.grid_ = RandomizedSearchCV(
+            self.pipe, self.params, scoring = self.score_, 
+            n_iter = self.n_iter_, cv = self.cv_tune_, refit = True, 
+            random_state = self.tune_seed_, verbose = 1, 
+            return_train_score = False
+        )
+        
+        self.grid_.fit(X, y)
+        
+        return self.grid_.best_estimator_, self.grid_.best_params_
 
 
 #%% performance metrics.
@@ -198,6 +261,7 @@ def binary_performance(y_true, y_pred):
     ## aliases.
     scores["Sensitivity"] = scores["Recall"]
     scores["FracResp"]    = scores["Recall"]
+    # scores["F1-score"]    = hmean([scores["Precision"], scores["Recall"]])
     scores["F1-score"]    = 2 * tp / (2 * tp + fp + fn)
     scores["BACC"]        = np.mean([scores["Sensitivity"], scores["Specificity"]])
     scores["MCC"]         = nan    
@@ -529,12 +593,8 @@ def make_performance_plot(y_true, y_preds, curve, ax, fontdict):
         ax.set_title("Precision-recall curve", **fontdict["title"]);
     
     ## finalize parameters.
-    ax.set_xticks(ticks = np.arange(0, 1.1, 0.1), 
-                  labels = np.arange(0, 1.1, 0.1).round(1), 
-                  **fontdict["label"]);
-    ax.set_yticks(ticks = np.arange(0, 1.1, 0.1), 
-                  labels = np.arange(0, 1.1, 0.1).round(1), 
-                  **fontdict["label"]);
+    ax.set_xticks(np.arange(0, 1.1, 0.1), **fontdict["label"]);
+    ax.set_yticks(np.arange(0, 1.1, 0.1), **fontdict["label"]);
     ax.tick_params(axis = "both", which = "major", 
                    labelsize = fontdict["label"]["fontsize"]);
     ax.legend(loc = lgnd_loc[curve.upper()], prop = lgnd_font, title = None);
@@ -735,7 +795,7 @@ def make_barplot3_base(data, x, y, hue, ax, fontdict, title, xlabels,
                        xrot = 0, bar_labels = True, ylabel = None, 
                        width = 0.8, bline = False, yrefs = None, 
                        legend = True, legend_title = None, colors = None,                        
-                       skipcolor = False, **kwargs):
+                       skipcolor = False):
     ## parameters.
     # col_palette = "tab10"
     if data[hue].nunique() > 3:
@@ -779,7 +839,7 @@ def make_barplot3_base(data, x, y, hue, ax, fontdict, title, xlabels,
     ## build plot.
     sns.barplot(data = data, x = x, y = y, hue = hue, orient = "v", 
                 width = width, palette = col_palette, edgecolor = "#000000", 
-                saturation = 0.8, dodge = True, ax = ax, **kwargs);            # nested barplots
+                saturation = 0.8, dodge = True, ax = ax);                      # nested barplots
     if bar_labels:
         [ax.bar_label(ax.containers[nn], labels = bar_lbl[nn], padding = 0.2, 
                       rotation = 0, **fontdict["label"]) \
@@ -823,8 +883,7 @@ def make_barplot3_base(data, x, y, hue, ax, fontdict, title, xlabels,
 def make_barplot3(data, x, y, hue, ax, fontdict, title, xlabels, xrot = 0, 
                   bar_labels = False, ylabel = None, width = 0.8, 
                   bline = False, yrefs = None, legend = True, 
-                  legend_title = None, colors = None, skipcolor = False, 
-                  **kwargs):
+                  legend_title = None, colors = None, skipcolor = False):
     
     if np.isinf(data[y].max()):                                                # make nested barplots with breaks
         max_val  = 200
@@ -838,7 +897,7 @@ def make_barplot3(data, x, y, hue, ax, fontdict, title, xlabels, xrot = 0,
             title = title, bar_labels = bar_labels, xlabels = xlabels, 
             xrot = xrot, ylabel = ylabel, bline = bline, yrefs = yrefs, 
             legend = False, legend_title = legend_title, colors = colors, 
-            skipcolor = skipcolor, ax = ax_t, fontdict = fontdict, **kwargs)
+            skipcolor = skipcolor, ax = ax_t, fontdict = fontdict)
         ax_t.set_xlim([-0.5, len(xlabels) - 0.5]);
         ax_t.set_ylim([ax_t_b, np.round(max_val * 1.05)]);
         ax_t.spines["bottom"].set_visible(False);
@@ -853,7 +912,7 @@ def make_barplot3(data, x, y, hue, ax, fontdict, title, xlabels, xrot = 0,
             title = None, bar_labels = bar_labels, xlabels = xlabels, 
             xrot = xrot, ylabel = ylabel, bline = bline, yrefs = yrefs, 
             legend = legend, legend_title = legend_title, colors = colors, 
-            skipcolor = skipcolor, ax = ax_b, fontdict = fontdict, **kwargs)
+            skipcolor = skipcolor, ax = ax_b, fontdict = fontdict)
         ax_b.set_xlim([-0.5, len(xlabels) - 0.5]);
         ax_b.set_ylim([0, ax_b_t]);     ax_b.spines["top"].set_visible(False);
         ax_b.set_yticks(ticks = [0, 20, 40], labels = [0, 20, 40], 
@@ -881,8 +940,8 @@ def make_barplot3(data, x, y, hue, ax, fontdict, title, xlabels, xrot = 0,
             data = data, x = x, y = y, hue = hue, width = width, title = title, 
             bar_labels = bar_labels, xlabels = xlabels, xrot = xrot, 
             ylabel = ylabel, bline = bline, yrefs = yrefs, legend = legend, 
-            legend_title = legend_title, colors = colors, skipcolor = skipcolor, 
-            ax = ax, fontdict = fontdict, **kwargs)
+            legend_title = legend_title, skipcolor = skipcolor, ax = ax, 
+            fontdict = fontdict)
         
     return ax
 

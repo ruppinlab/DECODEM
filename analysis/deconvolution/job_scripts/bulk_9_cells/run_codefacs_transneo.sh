@@ -1,24 +1,24 @@
 #!/bin/bash
-#SBATCH --time=48:00:00
 #SBATCH --mem=80g
+#SBATCH --time=48:00:00
+#SBATCH --partition=norm
 #SBATCH --gres=lscratch:20
-#SBATCH --partition=ccr
+#SBATCH --output=job_codefacs_transneo_%j.out
 #SBATCH --mail-type=BEGIN,END,TIME_LIMIT_50,TIME_LIMIT_80,FAIL
 
-​
+
 #### --------------------------------------------------------------
 
 ## get necessary variables.
 ## directories.
 PROJ="/data/Lab_ruppin/projects/TME_contribution_project";
-ODIR="$PROJ/data/TransNEO_SammutShare";
+ODIR="$PROJ/data/TransNEO";
 RUN_CF="$PROJ/analysis/CODEFACS/CODEFACS2/scripts";
-ODIR_CF="$RUN_CF/out_codefacs_tn_val_v2";
+ODIR_CF="$RUN_CF/CODEFACS_results";
 
 ## data files.
-BULK="$ODIR/transneo-validation-TPM-coding-genes_v2.txt";
+BULK="$ODIR/use_data/transneo-diagnosis-RNAseq-TPM_SRD_26May2022.tsv";
 SIGN="$PROJ/data/celltype_signature/signature_scSigR_BRCA.csv";
-
 
 ## create output directories.
 if [ ! -d "$ODIR_CF" ]; then
@@ -38,6 +38,8 @@ Rscript CODEFACS_v0.11.10.r -t $BULK -s $SIGN -e "mem=80g,time=48:00:00,partitio
 
 echo "done!";    echo " "
 
+
+#### --------------------------------------------------------------
 
 ## copy deconvolved data to output directory.
 echo "copying CODEFACS output to output directory: $ODIR... "

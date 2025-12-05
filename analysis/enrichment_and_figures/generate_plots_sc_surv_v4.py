@@ -20,10 +20,8 @@ if _mpath_ not in sys.path:
 
 import numpy as np, pandas as pd, pickle, string
 import matplotlib.pyplot as plt, seaborn as sns
-from math import nan, ceil, floor
+from math import floor
 from itertools import product
-from functools import reduce
-from operator import add
 from scipy.stats import mannwhitneyu
 from matplotlib.patches import Circle, RegularPolygon
 from matplotlib.path import Path
@@ -35,22 +33,35 @@ from sklearn.metrics import RocCurveDisplay
 from lifelines import KaplanMeierFitter
 from lifelines.statistics import logrank_test
 from lifelines.plotting import add_at_risk_counts
+from warnings import filterwarnings
 
 
 #%% functions.
 
-def read_pkl_data(data_path):
+## load model predictions from saved pickle.
+def read_pkl_data(data_path, mode = "resp"):
     with open(data_path, mode = "rb") as file:
         data_obj  = pickle.load(file)
-        y_test    = data_obj["label"]
-        y_pred    = data_obj["pred"]
-        th_test   = data_obj["th"]
-        perf_test = data_obj["perf"]
-        del data_obj
         
-    return y_test, y_pred, th_test, perf_test
+    match mode.lower():
+        case "resp":
+            y_test    = data_obj["label"]
+            y_pred    = data_obj["pred"]
+            th_test   = data_obj["th"]
+            perf_test = data_obj["perf"]
+            outs      = (y_test, y_pred, th_test, perf_test)
+        case "surv":
+            y_test    = data_obj["label"]
+            y_pred    = data_obj["pred"]
+            th_test   = data_obj["th"]
+            clin_test = data_obj["clin"]
+            outs      = (y_test, y_pred, th_test, clin_test)
+    del data_obj
+    
+    return outs
 
 
+## add p-values to boxplots / violin plots.
 def add_stat(ax, stats, data, x, y, yloc = 0.05, lines = True, lw = 2, 
              align = True, fontdict = None):
     if fontdict is None:
@@ -80,6 +91,7 @@ def add_stat(ax, stats, data, x, y, yloc = 0.05, lines = True, lw = 2,
     return ax
 
 
+## make a group of violin plots.
 def make_violinplot(data, x, y, hue, ax, orient = "v", stats = None, 
                     dodge = True, split = False, fill = True, order = None, 
                     hue_order = None, statloc = 0.35, statline = False, 
@@ -147,6 +159,7 @@ def make_violinplot(data, x, y, hue, ax, orient = "v", stats = None,
     return ax
 
 
+## make a ROC curve for a given set of labels & preds.
 def make_roc_plot(data, label, pred, group, ax, title = None, fill = False, 
                   alpha = 0.4, colors = None, legend_title = None, 
                   fontdict = None):
@@ -205,9 +218,10 @@ def make_roc_plot(data, label, pred, group, ax, title = None, fill = False,
     return ax
 
 
-def make_km_plot(ax, data_grp1, data_grp2, stat, colors = None, 
-                 ci_alpha = 0.15, risk_counts = True, title = None, 
-                 legend = True, legend_title = None, fontdict = None):
+## make Kaplan-Meier plots for two groups.
+def make_km_plot(ax, data1, data2, stat, colors = None, ci_alpha = 0.15, 
+                 risk_counts = True, title = None, legend = True, 
+                 legend_title = None, fontdict = None):
     ## plot parameters.
     if fontdict is None:
         fontdict = {
@@ -221,20 +235,20 @@ def make_km_plot(ax, data_grp1, data_grp2, stat, colors = None,
     lineprop = {"ls": "-", "lw": 2}
     
     lgndttl  = "Risk group" if (legend_title is None) else legend_title
-    lbls     = [f"{data_grp1.label} (n = {len(data_grp1.durations)})", 
-               f"{data_grp2.label} (n = {len(data_grp2.durations)})"]
+    lbls     = [f"{data1.label} (n = {len(data1.durations)})", 
+               f"{data2.label} (n = {len(data2.durations)})"]
     
     
     ## make plots.
-    ax = data_grp1.plot(show_censors = True, ci_show = True, color = colors[0], 
-                        ci_alpha = ci_alpha, ax = ax, **lineprop)
-    ax = data_grp2.plot(show_censors = True, ci_show = True, color = colors[1], 
-                        ci_alpha = ci_alpha, ax = ax, **lineprop)
+    ax = data1.plot(show_censors = True, ci_show = True, color = colors[0], 
+                    ci_alpha = ci_alpha, ax = ax, **lineprop)
+    ax = data2.plot(show_censors = True, ci_show = True, color = colors[1], 
+                    ci_alpha = ci_alpha, ax = ax, **lineprop)
     ax.text(x = 250, y = 0.20, s = f"Log-rank $P$ = {stat.p_value:0.3g}", 
             **fontdict["label"]);
     if risk_counts:                                                            # at-risk counts below the plots
-        add_at_risk_counts(data_grp1, data_grp2, labels = lbls, 
-                           rows_to_show = None, ax = ax, **fontdict["label"]);
+        add_at_risk_counts(data1, data2, labels = lbls, rows_to_show = None, 
+                           ax = ax, **fontdict["label"]);
     sns.despine(ax = ax, offset = 0, trim = False);
     
     ## format ticks & labels.
@@ -255,6 +269,8 @@ def make_km_plot(ax, data_grp1, data_grp2, stat, colors = None,
     return ax
 
 
+## make a radar chart.
+## define angles & prepare plot.
 def RadarChart(num_vars, frame = "circle"):
     """
     Create a radar chart with `num_vars` Axes.
@@ -269,14 +285,14 @@ def RadarChart(num_vars, frame = "circle"):
         Shape of frame surrounding Axes.
 
     """
-    # calculate evenly-spaced axis angles
+    ## calculate evenly-spaced axis angles
     theta = np.linspace(0, 2 * np.pi, num_vars, endpoint = False)
 
     class RadarTransform(PolarAxes.PolarTransform):
         def transform_path_non_affine(self, path):
-            # Paths with non-unit interpolation steps correspond to gridlines,
-            # in which case we force interpolation (to defeat PolarTransform's
-            # autoconversion to circular arcs).
+            ## Paths with non-unit interpolation steps correspond to gridlines,
+            ## in which case we force interpolation (to defeat PolarTransform's
+            ## autoconversion to circular arcs).
             if path._interpolation_steps > 1:
                 path = path.interpolated(num_vars)
             
@@ -290,7 +306,7 @@ def RadarChart(num_vars, frame = "circle"):
 
         def __init__(self, *args, **kwargs):
             super().__init__(*args, **kwargs)
-            # rotate plot such that the first axis is at the top
+            ## rotate plot such that the first axis is at the top
             self.set_theta_zero_location("N")
 
         def fill(self, *args, closed = True, **kwargs):
@@ -305,7 +321,7 @@ def RadarChart(num_vars, frame = "circle"):
 
         def _close_line(self, line):
             x, y = line.get_data()
-            # FIXME: markers at x[0], y[0] get doubled-up
+            ## FIXME: markers at x[0], y[0] get doubled-up
             if x[0] != x[-1]:
                 x = np.append(x, x[0])
                 y = np.append(y, y[0])
@@ -315,8 +331,8 @@ def RadarChart(num_vars, frame = "circle"):
             self.set_thetagrids(np.degrees(theta), labels, **kwargs)
 
         def _gen_axes_patch(self):
-            # The Axes patch must be centered at (0.5, 0.5) and of radius 0.5
-            # in axes coordinates.
+            ## The Axes patch must be centered at (0.5, 0.5) and of radius 0.5
+            ## in axes coordinates.
             if frame == "circle":
                 return Circle(xy = (0.5, 0.5), radius = 0.5,
                               edgecolor = "#000000")
@@ -330,12 +346,12 @@ def RadarChart(num_vars, frame = "circle"):
             if frame == "circle":
                 return super()._gen_axes_spines()
             elif frame == "polygon":
-                # spine_type must be "left"/"right"/"top"/"bottom"/"circle".
+                ## spine_type must be "left"/"right"/"top"/"bottom"/"circle".
                 spine = Spine(axes = self, spine_type = "circle", 
                               path = Path.unit_regular_polygon(num_vars))
-                # unit_regular_polygon gives a polygon of radius 1 centered at
-                # (0, 0) but we want a polygon of radius 0.5 centered at (0.5,
-                # 0.5) in axes coordinates.
+                ## unit_regular_polygon gives a polygon of radius 1 centered at
+                ## (0, 0) but we want a polygon of radius 0.5 centered at (0.5,
+                ## 0.5) in axes coordinates.
                 spine.set_transform(Affine2D().scale(0.5).translate(0.5, 0.5)
                                     + self.transAxes)
                 return {"polar": spine}
@@ -347,6 +363,7 @@ def RadarChart(num_vars, frame = "circle"):
     return theta
 
 
+## make radar lines at specified ticks.
 def make_radar_lines(theta, data, ax, rstep = 0.1, labels = None, title = None, 
                      color = "magenta", alpha = 0.25, ls = "-", lw = 1.5, 
                      mrkr = "o", ms = 6, fontdict = None):
@@ -376,6 +393,7 @@ def make_radar_lines(theta, data, ax, rstep = 0.1, labels = None, title = None,
     return ax
 
 
+## adjust tick spacing in radar chart.
 def pad_radar_ticks(ticks, pads):
     ## add padding to radar tick labels for better visualization.
     
@@ -394,6 +412,7 @@ def pad_radar_ticks(ticks, pads):
     return ticks_pad
 
 
+## make a pair of donut plots - one inside another.
 def make_donutplots(data, x, outer, inner, ax, labels = False, title = None, 
                     outer_order = None, inner_order = None, donut_size = 0.35, 
                     colors = None, fontdict = None):
@@ -448,6 +467,7 @@ def make_donutplots(data, x, outer, inner, ax, labels = False, title = None,
     return ax
 
 
+## extract p-values with star (*) significance.
 def get_pvals_from_score(score_data, resp_col = "Response", 
                          resp_vals = ["R", "NR"], model_col = "model", 
                          score_col = "score"):
@@ -459,6 +479,7 @@ def get_pvals_from_score(score_data, resp_col = "Response",
             alternative = "greater", nan_policy = "omit"), 
             index = ["U1", "pval"]), 
         include_groups = False)
+    
     score_stat["annot"] = score_stat.pval.apply(
         lambda p: ("***" if (p <= 0.001) else "**" if (p <= 0.01) 
                    else "*" if (p <= 0.05) else "ns"))
@@ -466,7 +487,7 @@ def get_pvals_from_score(score_data, resp_col = "Response",
     return score_stat
 
 
-#%% read all data for fig. 5.
+#%% read all data for figs 1 & 5.
 
 data_path = "../../data/TransNEO/transneo_analysis/mdl_data/"
 data_file = ["zhangTNBC2021_predictions_chemo_th0.99_top3500_ENS2_allfeatures_3foldCVtune_27Sep2024.pkl", 
@@ -475,68 +496,61 @@ data_file = ["zhangTNBC2021_predictions_chemo_th0.99_top3500_ENS2_allfeatures_3f
              "tcga_predictions_chemo_th0.99_ENS2_25features_3foldCVtune_07Dec2024.pkl"]
 
 
-## get zhang et al. sc prediction data.
-with open(data_path + data_file[0], "rb") as file:
-    data_obj      = pickle.load(file)
-    y_test_cm1    = data_obj["label"]
-    y_pred_cm1    = data_obj["pred"]
-    th_test_cm1   = data_obj["th"]
-    perf_test_cm1 = data_obj["perf"]
-    del data_obj
+## get Zhang et al. SC prediction data.
+y_test_cm1, y_pred_cm1, th_test_cm1, perf_test_cm1 = read_pkl_data(
+    data_path + data_file[0], mode = "resp")
 
-with open(data_path + data_file[1], "rb") as file:
-    data_obj      = pickle.load(file)
-    y_test_im1    = data_obj["label"]
-    y_pred_im1    = data_obj["pred"]
-    th_test_im1   = data_obj["th"]
-    perf_test_im1 = data_obj["perf"]
-    del data_obj
+y_test_im1, y_pred_im1, th_test_im1, perf_test_im1 = read_pkl_data(
+    data_path + data_file[1], mode = "resp")
 
 
-## get bassez et al. sc prediction data.
-with open(data_path + data_file[2], "rb") as file:
-    data_obj      = pickle.load(file)
-    y_test_im2    = data_obj["label"]
-    y_pred_im2    = data_obj["pred"]
-    th_test_im2   = data_obj["th"]
-    perf_test_im2 = data_obj["perf"]
-    del data_obj
+## get Bassez et al. SC prediction data.
+y_test_im2, y_pred_im2, th_test_im2, perf_test_im2 = read_pkl_data(
+    data_path + data_file[2], mode = "resp")
 
 
-## get tcga-brca survival data.
-with open(data_path + data_file[3], "rb") as file:
-    data_obj       = pickle.load(file)
-    y_test_surv    = data_obj["label"]
-    y_pred_surv    = data_obj["pred"]
-    th_test_surv   = data_obj["th"]
-    clin_test_surv = data_obj["clin"]
-    del data_obj
-    
+## get TCGA-BRCA survival data.
+subtypes_all = ["ER+/HER2-", "TNBC"]                                           # define BC subtype labels
+
+y_test_surv, y_pred_surv, th_test_surv, clin_test_surv = read_pkl_data(
+    data_path + data_file[3], mode = "surv")
+  
 clin_test_surv["Clinical_subtype"] = clin_test_surv.ER_status.map(
-    lambda x: "ER+,HER2-" if (x == "Positive") else "TNBC")
+    lambda x: subtypes_all[0] if (x == "Positive") else subtypes_all[1])
 
 
-#%% prepare data for fig. 1-II.
+#%% prepare data for fig 1-II.
 
-fig_data1C = [
+response_all   = {0: ["R", "NR"], 1: ["E", "NE"]}                              # define patient response labels (0 = RECIST, 1 = clonotype expansion)
+treatments_all = ["Chemotherapy", "Chemotherapy + ICB"]                        # define treatment labels
+
+ds_info1       = pd.DataFrame(
+    [[trt, len(y), sum(y == 1), sum(y == 0), f"{trt} (n = {len(y)})"] 
+     for trt, y in zip(treatments_all, [y_test_cm1, y_test_im1])], 
+    columns = ["Treatment", "n"] + response_all[0] + ["label"])
+
+ds_info2      = pd.DataFrame(
+    [[treatments_all[1], len(y_test_im2), sum(y_test_im2 == 1), 
+     sum(y_test_im2 == 0), f"{treatments_all[1]} (n = {len(y_test_im2)})"]], 
+    columns = ["Treatment", "n"] + response_all[1] + ["label"], index = [0])
+
+
+## prepare data for fig 1C.
+fig_data1_II = [
     pd.DataFrame({
-        "Subtype"  : ["TNBC"] * 4, "Response": ["R", "NR"] * 2, 
-        "Treatment": ["Chemotherapy"] * 2 + ["Chemotherapy + ICB"] * 2, 
+        "Subtype"  : subtypes_all[1:] * 4, "Response": response_all[0] * 2, 
+        "Treatment": np.repeat(treatments_all, repeats = 2), 
         "Count"    : [y_test_cm1.eq(1).sum(), y_test_cm1.eq(0).sum(), 
                       y_test_im1.eq(1).sum(), y_test_im1.eq(0).sum()] }), 
     pd.DataFrame({
-        "Subtype"  : ["TNBC"] * 4, "Response": ["R", "NR"] * 2, 
-        "Treatment": ["Chemotherapy"] * 2 + ["Chemotherapy + ICB"] * 2, 
-        "Count"    : [0, 0, y_test_im2.eq(1).sum(), y_test_im2.eq(0).sum()] })
-]
-
-ds_names   = [f"Zhang et al. (n = {fig_data1C[0].Count.sum()})", 
-              f"Bassez et al. (n = {fig_data1C[1].Count.sum()})"]
+        "Subtype"  : subtypes_all[1:] * 4, "Response": response_all[1] * 2, 
+        "Treatment": np.repeat(treatments_all, repeats = 2), 
+        "Count"    : [0, 0, y_test_im2.eq(1).sum(), y_test_im2.eq(0).sum()] })]
 
 
-#%% make fig. 1-II.
+#%% make fig 1-II.
 
-svdat = False
+svdat = False                                                                  # set as True to save data
 
 ## plot parameters.
 sns.set_style("ticks")
@@ -565,36 +579,34 @@ plot_fonts   = {
 
 ## nested donut plots.
 fig_dntsize1 = 0.60
-fig_lblord1  = [["R", "NR"], ["Chemotherapy", "Chemotherapy + ICB"]]
 fig_colors1  = [colors[0], colors[1], colors[4], colors[3]]
-fig_legend1  = ["R / E", "NR / NE", "Chemotherapy", "Chemotherapy + ICB"]
-add_legend   = "\n".join(["*Chemotherapy = Taxane / Taxane-Anthracycline", 
+fig_ttls1    = [f"{dn} (n = {ds.n.sum()})" for dn, ds in zip(
+    ["Zhang et al.", "Bassez et al."], [ds_info1, ds_info2])]
+fig_lgnd1    = [" / ".join(x) for x in zip(*response_all.values())] + \
+    treatments_all
+fig_ftnt1    = "\n".join(["*Chemotherapy = Taxane / Taxane-Anthracycline", 
                           " ICB = Atezolizumab / Pembrolizumab"])
 
 fig1_II, ax1_II = plt.subplots(figsize = (14, 7), nrows = 1, ncols = 2)
 ax1_II = dict(zip(["C1", "C2"], ax1_II))
 
-ax1_II["C1"] = make_donutplots(data = fig_data1C[0], x = "Count", 
-                               outer = "Response", inner = "Treatment", 
-                               outer_order = fig_lblord1[0], 
-                               inner_order = fig_lblord1[1], 
-                               colors = fig_colors1, donut_size = fig_dntsize1, 
-                               title = ds_names[0], ax = ax1_II["C1"])
+for k, ax in enumerate(ax1_II.values()):
+    ax = make_donutplots(data = fig_data1_II[k], x = "Count", 
+                         outer = "Response", inner = "Treatment", 
+                         outer_order = response_all[k], 
+                         inner_order = treatments_all, colors = fig_colors1, 
+                         donut_size = fig_dntsize1, title = fig_ttls1[k], 
+                         ax = ax)
+    
+    if k == 1:                                                                 # add common legend
+        ax.legend(labels = fig_lgnd1, loc = (1.20, 0.45), ncols = 2, 
+                  title = f"Response{' ' * 5}Treatment", alignment = "left", 
+                  prop = legend_fonts["item"], 
+                  title_fontproperties = legend_fonts["title"]);
+        fig1_II.text(x = 0.71, y = 0.38, s = fig_ftnt1, 
+                     **legend_fonts["item"]);                                  # add drug info
 
-ax1_II["C2"] = make_donutplots(data = fig_data1C[1], x = "Count", 
-                               outer = "Response", inner = "Treatment", 
-                               outer_order = fig_lblord1[0], 
-                               inner_order = fig_lblord1[1], 
-                               colors = fig_colors1, donut_size = fig_dntsize1, 
-                               title = ds_names[1], ax = ax1_II["C2"])
-
-ax1_II["C2"].legend(labels = fig_legend1, loc = (1.20, 0.45), ncols = 2, 
-                    title = f"Response{' ' * 5}Treatment", 
-                    alignment = "left", prop = legend_fonts["item"], 
-                    title_fontproperties = legend_fonts["title"]);
-fig1_II.text(x = 0.71, y = 0.38, s = add_legend, **legend_fonts["item"]);
-
-fig1_II.text(x = 0.0, y = 0.80, s = "C", **panel_fonts);
+fig1_II.text(x = 0.0, y = 0.80, s = "C", **panel_fonts);                       # add panel label
 
 fig1_II.tight_layout(h_pad = 0, w_pad = 4)
 plt.show()
@@ -608,80 +620,108 @@ if svdat:
     
     fig_file1_II = "dataset_summary_sc.pdf"
     fig1_II.savefig(fig_path + fig_file1_II, dpi = 600)
+    print(fig_file1_II)
 
 
-#%% prepare data for fig. 5 - zhang et al. sc. 
+#%% prepare data for fig 5. 
 
-cell_type1 = "B-cells"
+filterwarnings(action = "ignore")                                              # suppress future-warnings
 
-## treatment info.
-drug_info1 = pd.DataFrame(
-    [{"n": len(y), "R": sum(y == 1), "NR": sum(y == 0)} 
-     for y in [y_test_cm1, y_test_im1]], 
-    index = ["Chemotherapy", "Chemotherapy + ICB"]).reset_index(
-    names = "Treatment")
-drug_info1["label"] = drug_info1.apply(
-    lambda df: f"{df.Treatment} (n = {df.n})", axis = 1).tolist()
+def get_pred_data(y_true, y_pred, lbl = None, lblname = "label", 
+                  resp = ["R", "NR"]):
+    ## build score matrix.
+    score_data = pd.DataFrame({
+        "Response": y_true.replace(to_replace = dict(zip([1, 0], resp))), 
+        "score"   : y_pred.astype(float)}).dropna(
+        how = "any", axis = 0)
+    
+    if lbl is not None:
+        score_data.insert(loc = 1, column = lblname, value = lbl)
+    
+    ## perform R vs. NR wilcoxon test.
+    score_stat = score_data.pipe(
+        lambda df: pd.Series(mannwhitneyu(
+            df.score[df.Response.eq(resp[0])], df.score[df.Response.eq(resp[1])], 
+            alternative = "greater", nan_policy = "omit"), 
+            index = ["U1", "pval"]))
 
-## get data for fig. 5A.
-fig_data5A = pd.DataFrame({
-    "Response" : pd.concat([y_test_cm1, y_test_im1]).replace(
-        to_replace = {1: "R", 0: "NR"}), 
-    "score"    : pd.concat([y_pred_cm1, y_pred_im1])[cell_type1], 
-    "Treatment": reduce(add, drug_info1.apply(
-        lambda x: [x.label] * x.n, axis = 1).tolist()) })
+    score_stat["annot"] = ("***" if (score_stat.pval <= 0.001) else 
+                           "**" if (score_stat.pval <= 0.01) else 
+                           "*" if (score_stat.pval <= 0.05) else 
+                           "ns")
+    
+    return score_data, score_stat
 
-fig_stat5A = get_pvals_from_score(
-    score_data = fig_data5A, resp_col = "Response", model_col = "Treatment", 
-    score_col = "score", resp_vals = ["R", "NR"])
 
-## get data for fig. 5B.
-fig_data5B = fig_data5A.copy().replace(
-    to_replace = {"Response": {"R": 1, "NR": 0}}).infer_objects(
+## init data list for fig 5: panels A-D.
+fig_data5, fig_stat5 = [[ ] for _ in range(4)], [[ ] for _ in range(2)]
+
+## Zhang et al.
+## get data for fig 5A. 
+model1       = "B-cells"
+fig_data5[0] = [[ ] for _ in range(2)]                                         # R vs. NR scores
+fig_stat5[0] = fig_data5[0].copy()                                             # R vs. NR p-values
+
+fig_data5[0][0], fig_stat5[0][0] = get_pred_data(y_true  = y_test_cm1, 
+                                                 y_pred  = y_pred_cm1[model1], 
+                                                 resp    = response_all[0], 
+                                                 lbl     = ds_info1.label[0], 
+                                                 lblname = "Treatment")
+
+fig_data5[0][1], fig_stat5[0][1] = get_pred_data(y_true  = y_test_im1, 
+                                                 y_pred  = y_pred_im1[model1], 
+                                                 resp    = response_all[0], 
+                                                 lbl     = ds_info1.label[1], 
+                                                 lblname = "Treatment")
+
+fig_data5[0] = pd.concat(fig_data5[0], axis = 0)
+fig_data5[0].Treatment = fig_data5[0].Treatment.map(
+    lambda x: x.replace(" (", "\n("))
+fig_data5[0].insert(loc = 2, column = "model", value = model1)
+fig_stat5[0] = pd.concat(fig_stat5[0], axis = 1, 
+                         keys = fig_data5[0].Treatment.unique()).T
+
+
+## get data for fig 5B.
+fig_data5[1] = fig_data5[0].replace(
+    to_replace = {"Response" : dict(zip(response_all[0], [1, 0])), 
+                  "Treatment": {ds.replace(" (", "\n("): ds 
+                                for ds in ds_info1.label}}).infer_objects(
     copy = False)
-fig_data5B["Treatment"] = fig_data5B.Treatment.replace(
-    regex = {"Immunotherapy ": "Immunotherapy\n"})
 
 
-#%% prepare data for fig. 5 - bassez et al. sc. 
+## Bassez et al.
+## get data for fig 5C.
+model2       = ["B-cells", "Myeloid", "Endothelial"]
+fig_data5[2] = [[ ] for _ in range(len(model2))]                               # R vs. NR scores
+fig_stat5[1] = fig_data5[2].copy()                                             # R vs. NR p-values
 
-cell_type2 = ["B-cells", "Myeloid", "Endothelial"]
+for k, mdl in enumerate(model2):
+    lbl = f"{mdl}\n(n = {y_pred_im2[mdl].dropna().shape[0]})"
+    fig_data5[2][k], fig_stat5[1][k] = get_pred_data(y_true  = y_test_im2, 
+                                                     y_pred  = y_pred_im2[mdl], 
+                                                     resp    = response_all[1], 
+                                                     lbl     = lbl, 
+                                                     lblname = "model")
+del k, mdl, lbl                                                                # reduce clutter
 
-## cell type info.
-cell_info2 = pd.DataFrame({
-    ctp_: pd.concat([y_test_im2, pred_], axis = 1).dropna(
-        axis = 0)[
-        "Response"].pipe(
-        lambda y: {"n": len(y), "E": sum(y == 1), "NE": sum(y == 0)}) 
-        for ctp_, pred_ in y_pred_im2[cell_type2].items()}).T.reset_index(
-    names = ["cell_type"])
-cell_info2["label"] = cell_info2.apply(
-    lambda x: f"{x.cell_type} (n = {x.n})", axis = 1)
-
-## get data for fig. 5C.
-fig_data5C = pd.concat([
-    y_test_im2.replace(to_replace = {1: "E", 0: "NE"}), 
-    y_pred_im2[cell_type2]], axis = 1).sort_values(
-        by = "Response", ascending = False).melt(
-        id_vars = "Response", var_name = "cell_type", 
-        value_name = "score", ignore_index = False).dropna(
-        axis = 0, subset = ["score"]).replace(
-        to_replace = {"cell_type": cell_info2.set_index(
-            keys = "cell_type")["label"].to_dict()})
-
-fig_stat5C = get_pvals_from_score(
-    score_data = fig_data5C, resp_col = "Response", model_col = "cell_type", 
-    score_col = "score", resp_vals = ["E", "NE"])
-
-## get data for fig. 5D.
-fig_data5D = fig_data5C.copy().replace(
-    to_replace = {"Response": {"E": 1, "NE": 0}}).infer_objects(
-    copy = False)
+fig_data5[2] = pd.concat(fig_data5[2], axis = 0)
+fig_data5[2].insert(loc = 1, column = "Treatment", value = treatments_all[1])
+fig_stat5[1] = pd.concat(fig_stat5[1], axis = 1, 
+                         keys = fig_data5[2].model.unique()).T
 
 
-#%% make fig. 5.
+## get data for fig 5D.
+fig_data5[3] = fig_data5[2].replace(
+    to_replace = {"Response" : dict(zip(response_all[1], [1, 0])), 
+                  "model"    : {mdl: mdl.replace("\n(", " (") 
+                                for mdl in fig_stat5[1].index}}).infer_objects(
+                                        copy = False)
 
-svdat = False
+
+#%% make fig 5.
+
+svdat = False                                                                  # set as True to save data
 
 ## plot parameters.
 sns.set_style("ticks")
@@ -704,86 +744,59 @@ label_fonts  = {"weight": "regular", "size": 14, "color": "#000000"}
 legend_fonts = {"item" : {"size": 12, "weight": "regular"}, 
                 "title": {"size": 16, "weight": "bold"}}
 
-## all plots.
-fig5, ax5 = plt.subplots(figsize = (16, 7), nrows = 2, ncols = 2, 
-                         height_ratios = [1, 1], width_ratios = [1, 1])
+## violin plots + ROC plots.
+fig_llocs5  = [[0.08, 0.43], [0.96, 0.52]]
+fig_ploc5   = [0.4, 0.7]
+fig_ylim5   = [[0.2, 0.4], [0.8, 0.7]]
+fig_ttls5   = [f"Zhang et al. (n = {ds_info1.n.sum()})\n", 
+               f"Bassez et al. (n = {ds_info2.n.sum()})\n"]
+fig_colors5 = [colors[k] for k in [3, 4, 5, -1]]
+
+
+fig5, ax5 = plt.subplots(figsize = (16, 7), nrows = 2, ncols = 2)
 ax5 = dict(zip(list("ABCD"), ax5.ravel()))
 
-fig_llocs5 = [[0.08, 0.44], [0.96, 0.52]]
-fig_ttls5  = {"A": f"Zhang et al. (n = {fig_data5A.index.nunique()})\n", 
-              "B": f"Zhang et al. (n = {fig_data5B.index.nunique()})\n", 
-              "C": f"Bassez et al. (n = {fig_data5C.index.nunique()})\n", 
-              "D": f"Bassez et al. (n = {fig_data5D.index.nunique()})\n"}
+
+## make violins.
+for k, lbl in enumerate(list("AC")):
+    match lbl: 
+        case "A":
+            xcol, lgndttl = "Treatment", "Response"
+        case "C":
+            xcol, lgndttl = "model", "Clonotype\nExpansion"
+    
+    ax = ax5[lbl]
+    ax = make_violinplot(data = fig_data5[2 * k], x = xcol, y = "score", 
+                         hue = "Response", stats = fig_stat5[k], 
+                         hue_order = response_all[k], inner = "quart", 
+                         split = True, dodge = True, statloc = fig_ploc5[k], 
+                         title = fig_ttls5[k], ylabel = "Prediction score", 
+                         legend_vert = True, legend_out = False, 
+                         legend_title = lgndttl, ax = ax)
+    ax.set_ylim([0 - fig_ylim5[k][0], 1 + fig_ylim5[k][1]]);
+    ax.set_yticks(np.arange(0, 1.2, 0.2).round(1));
+    ax.get_legend().set(bbox_to_anchor = (-0.20, 0.70));
+    fig5.text(x = fig_llocs5[0][0], y = fig_llocs5[1][k], s = lbl, 
+              **panel_fonts);                                                  # add panel labels
 
 
-## make violins - zhang et al. sc.
-fig_ylim5A = [0.2, 0.4];   fig_ploc5A = 0.4
+## make ROC curves.
+for k, lbl in enumerate(list("BD")):
+    match lbl:
+        case "B":
+            grp, lgndttl = "Treatment", "Treatment"
+        case "D":
+            grp, lgndttl = "model", "Cell type"
+    
+    ax = ax5[lbl]
+    ax = make_roc_plot(data = fig_data5[2 * k + 1], label = "Response", 
+                       pred = "score", group = grp, colors = fig_colors5, 
+                       fill = True, alpha = 0.15, title = fig_ttls5[k], 
+                       legend_title = lgndttl, ax = ax)
+    fig5.text(x = fig_llocs5[0][1], y = fig_llocs5[1][k], s = lbl, 
+              **panel_fonts);                                                  # add panel labels
 
-ax5["A"]   = make_violinplot(data = fig_data5A, x = "Treatment", y = "score", 
-                             hue = "Response", stats = fig_stat5A, 
-                             hue_order = ["R", "NR"], inner = "quart", 
-                             split = True, dodge =  True, statloc = fig_ploc5A, 
-                             statline = False, title = fig_ttls5["A"], 
-                             legend_vert = True, legend_out = False, 
-                             legend_title = "Response", ax = ax5["A"])
-ax5["A"].set_ylim([0 - fig_ylim5A[0], 1 + fig_ylim5A[1]]);
-ax5["A"].set_yticks(ticks  = np.arange(0, 1.2, 0.2), 
-                    labels = np.arange(0, 1.2, 0.2));
-ax5["A"].yaxis.set_major_formatter("{x:0.1f}");
-ax5["A"].set_xticks(ticks  = range(len(drug_info1)), 
-                    labels = drug_info1.label.map(
-                        lambda x: x.replace(" (", "\n(")));
-ax5["A"].tick_params(axis = "both", labelsize = label_fonts["size"]);
-ax5["A"].set_ylabel("Prediction score", **legend_fonts["item"]);
-ax5["A"].get_legend().set_bbox_to_anchor([-0.60, 0.25, 0.4, 0.4]);
-fig5.text(x = fig_llocs5[0][0], y = fig_llocs5[1][0], s = "A", **panel_fonts);
-
-
-## make roc curves - zhang et al. sc.
-fig_colors5B = [colors[3], colors[4], colors[-1]]
-
-ax5["B"]     = make_roc_plot(data = fig_data5B, label = "Response", 
-                             pred = "score", group = "Treatment", 
-                             colors = fig_colors5B, fill = True, 
-                             alpha = 0.15, title = fig_ttls5["B"], 
-                             ax = ax5["B"])
-fig5.text(x = fig_llocs5[0][1], y = fig_llocs5[1][0], s = "B", **panel_fonts);
-
-## make violins - bassez et al. sc.
-fig_ylim5C  = [0.8, 0.7];   fig_ploc5C = 0.7
-
-ax5["C"]    = make_violinplot(data = fig_data5C, x = "cell_type", y = "score", 
-                              hue = "Response", stats = fig_stat5C, 
-                              hue_order = ["E", "NE"], inner = "quart", 
-                              split = True, dodge =  True, statloc = fig_ploc5C, 
-                              statline = False, title = fig_ttls5["C"], 
-                              legend_vert = True, legend_out = False, 
-                              legend_title = "Clonotype\nExpansion", 
-                              ax = ax5["C"])
-ax5["C"].set_ylim([0 - fig_ylim5C[0], 1 + fig_ylim5C[1]]);
-ax5["C"].set_yticks(ticks  = np.arange(0, 1.2, 0.2), 
-                    labels = np.arange(0, 1.2, 0.2));
-ax5["C"].yaxis.set_major_formatter("{x:0.1f}");
-ax5["C"].set_xticks(ticks  = range(len(cell_info2)), 
-                    labels = cell_info2.label.map(
-                        lambda x: x.replace(" (", "\n(")));
-ax5["C"].tick_params(axis = "both", labelsize = label_fonts["size"]);
-ax5["C"].set_ylabel("Prediction score", **legend_fonts["item"]);
-ax5["C"].get_legend().set_bbox_to_anchor([-0.60, 0.35, 0.4, 0.4]);
-fig5.text(x = fig_llocs5[0][0], y = fig_llocs5[1][1], s = "C", **panel_fonts);
-
-
-## make roc curves - zhang et al. sc.
-fig_colors5D = [colors[3], colors[4], colors[5], colors[-1]]
-
-ax5["D"]     = make_roc_plot(data = fig_data5D, label = "Response", 
-                             pred = "score", group = "cell_type", 
-                             colors = fig_colors5D, fill = True, 
-                             alpha = 0.15, title = fig_ttls5["D"], 
-                             legend_title = "Cell type", ax = ax5["D"])
-fig5.text(x = fig_llocs5[0][1], y = fig_llocs5[1][1], s = "D", **panel_fonts);
-
-fig5.tight_layout(h_pad = 1, w_pad = 4)
+fig5.tight_layout(h_pad = 2, w_pad = 4)
 plt.show()
 
 
@@ -794,72 +807,52 @@ if svdat:
     
     fig_file5 = "all_predictions_sc_survival_chemo_immuno_th0.99_ENS2_5foldCV_v2.pdf"
     fig5.savefig(fig_path + fig_file5, dpi = 600)
+    print(fig_file5)
 
 
-#%% prepare data for supp. fig. 7.
+#%% make supplementary figs.
+#%% prepare data for supp fig 9.
 
-def get_cell_info(y_pred):
-    cell_info = y_pred.apply(
-        lambda x: x.dropna().size).reset_index().set_axis(
-        labels = ["cell_type", "n"], axis = 1)
+## prepare data for supp fig 9A-C.
+fig_dataS9, fig_statS9 = [[ ] for _ in range(3)], [[ ] for _ in range(3)]      # R vs. NR scores & p-values
+
+for k, (y_t, y_p) in enumerate(zip([y_test_cm1, y_test_im1, y_test_im2], 
+                                   [y_pred_cm1, y_pred_im1, y_pred_im2])):
+    y_p = y_p.copy().rename(
+        columns = lambda x: f"{'Pseudobulk' if x == 'bulk' else x}\n(n = {y_p[x].notna().sum()})")
     
-    cell_info["label"] = cell_info.apply(
-        lambda x: f"{x.cell_type} (n = {x.n})", axis = 1).replace(
-        regex = {"Bulk": "Pseudobulk"})
+    for mdl in y_p.columns:        
+        dat, stat = get_pred_data(y_true  = y_t, 
+                                  y_pred  = y_p[mdl], 
+                                  resp    = response_all[int(k == 2)],         # k < 2: Zhang et al., k == 2: Bassez et al.
+                                  lbl     = mdl, 
+                                  lblname = "model")
+        dat  = dat.replace(
+            regex = {"model": {"_": "\n", "Bulk": "Pseudobulk"}})
+        
+        stat = stat.rename(index = mdl.replace(
+            "_", "\n").replace(
+            "Bulk", "Pseudobulk"))
+        
+        fig_dataS9[k].append( dat );    fig_statS9[k].append( stat )
     
-    return cell_info
+    fig_dataS9[k] = pd.concat(fig_dataS9[k], axis = 0)
+    fig_statS9[k] = pd.concat(fig_statS9[k], axis = 1).T
     
-
-## get cell type info.
-cell_info_cm1 = get_cell_info(y_pred_cm1)
-cell_info_im1 = get_cell_info(y_pred_im1)
-cell_info_im2 = get_cell_info(y_pred_im2)
-
-## prepare data for supp. fig. 7-I.
-fig_dataS7A   = pd.concat([y_test_cm1.replace(to_replace = {1: "R", 0: "NR"}), 
-                           y_pred_cm1.rename(columns = {"Bulk": "Pseudobulk"})], 
-                          axis = 1).melt(
-    id_vars = "Response", var_name = "cell_type", value_name = "score")
-
-fig_dataS7B   = pd.concat([y_test_im1.replace(to_replace = {1: "R", 0: "NR"}), 
-                           y_pred_im1.rename(columns = {"Bulk": "Pseudobulk"})], 
-                          axis = 1).melt(
-    id_vars = "Response", var_name = "cell_type", value_name = "score")
-
-fig_statS7A   = get_pvals_from_score(
-    score_data = fig_dataS7A, resp_col = "Response", model_col = "cell_type", 
-    score_col = "score", resp_vals = ["R", "NR"])
-
-fig_statS7B   = get_pvals_from_score(
-    score_data = fig_dataS7B, resp_col = "Response", model_col = "cell_type", 
-    score_col = "score", resp_vals = ["R", "NR"])
-
-fig_dataS7C   = pd.concat([y_test_im2.replace(to_replace = {1: "E", 0: "NE"}), 
-                           y_pred_im2.rename(columns = {"Bulk": "Pseudobulk"})], 
-                          axis = 1).melt(
-    id_vars = "Response", var_name = "cell_type", value_name = "score")
-
-fig_statS7C   = get_pvals_from_score(
-    score_data = fig_dataS7C, resp_col = "Response", model_col = "cell_type", 
-    score_col = "score", resp_vals = ["E", "NE"])
-
-## prepare data for supp. fig. 7-II.
-fig_dataS7DE  = pd.DataFrame({
-    "chemo": perf_test_cm1["AUC"], "icb": perf_test_im1["AUC"]}).reset_index(
-    names = ["cell_type"])
-fig_dataS7DE["cell_type"] = fig_dataS7DE.cell_type.map(
-    lambda x: x.replace("_", "\n").replace("Bulk", "Pseudobulk"))
-
-fig_dataS7F   = perf_test_im2[["AUC"]].set_axis(
-    labels = ["icb"], axis = 1).reset_index(
-    names = ["cell_type"])
-fig_dataS7F["cell_type"] = fig_dataS7F.cell_type.map(
-    lambda x: x.replace("_", "\n").replace("Bulk", "Pseudobulk"))
+del mdl, k, y_t, y_p, dat, stat                                                # reduce clutter
 
 
-#%% make supp. fig. 7-I.
+## prepare data for supp fig 9D-F.
+[fig_dataS9.append(
+    perf[["AUC"]].reset_index(
+        names = "model").replace(
+        regex = {"_": "\n", "Bulk": "Pseudobulk"}))
+    for perf in [perf_test_cm1, perf_test_im1, perf_test_im2]];
 
-svdat = False
+
+#%% make supp fig 9-I.
+
+svdat = False                                                                  # set as True to save data
 
 ## plot parameters.
 sns.set_style("ticks")
@@ -881,83 +874,41 @@ panel_fonts = {"weight": "bold", "size": 36, "color": "#000000"}
 label_fonts = {"weight": "regular", "size": 14, "color": "#000000"}
 
 ## violin plots.
-fig_ttlsS7  = {"A": "Zhang et al.: Chemotherapy\n", 
-               "B": "Zhang et al.: Chemotherapy + ICB\n", 
-               "C": "Bassez et al.: Chemotherapy + ICB\n"}
+fig_llocsS9 = [[-0.01, 0.44], [0.96, 0.46]]
+fig_plocS9  = [0.4, 0.75]
+fig_ylimS9  = [0.5, 0.75]
 
-fig_ylimS7  = 0.5;     fig_plocS7 = 0.4
-fig_llocsS7 = [[-0.01, 0.44], [0.96, 0.46]]
+fig_ttlsS9  = ["Zhang et al.: Chemotherapy\n", 
+               "Zhang et al.: Chemotherapy + ICB\n", 
+               "Bassez et al.: Chemotherapy + ICB\n"]
 
 
-figS7_I, axS7_I = plt.subplot_mosaic(
+figS9_I, axS9_I = plt.subplot_mosaic(
     mosaic = [["A", "B"], ["C", "C"]], figsize = (18, 8), 
     height_ratios = [1, 1], width_ratios = [1, 1], sharey = False)
 
 ## make violins.
-axS7_I["A"] = make_violinplot(data = fig_dataS7A, x = "cell_type", y = "score", 
-                              hue = "Response", stats = fig_statS7A, 
-                              hue_order = ["R", "NR"], inner = "quart", 
-                              split = True, dodge = True, statloc = fig_plocS7, 
-                              statline = False, title = fig_ttlsS7["A"], 
-                              legend_vert = True, legend_out = True, 
-                              legend_title = "Response", ax = axS7_I["A"])
-axS7_I["A"].set_ylim([0 - fig_ylimS7, 1 + fig_ylimS7]);
-axS7_I["A"].set_yticks(ticks  = np.arange(0, 1.2, 0.2), 
-                       labels = np.arange(0, 1.2, 0.2));
-axS7_I["A"].set_xticks(ticks  = range(len(cell_info_cm1)), 
-                       labels = cell_info_cm1.label.map(
-                           lambda x: x.replace(" (", "\n(")));
-axS7_I["A"].yaxis.set_major_formatter("{x:0.1f}");
-axS7_I["A"].tick_params(axis = "both", labelsize = label_fonts["size"]);
-axS7_I["A"].set_ylabel("Prediction score", **legend_fonts["item"]);
-axS7_I["A"].legend([ ], [ ]);
-figS7_I.text(x = fig_llocsS7[0][0], y = fig_llocsS7[1][0], s = "A", 
-             **panel_fonts);
+for k, (lbl, ax) in enumerate(axS9_I.items()):
+    ax = make_violinplot(data = fig_dataS9[k], x = "model", y = "score", 
+                         hue = "Response", stats = fig_statS9[k], 
+                         hue_order = response_all[int(k == 2)], inner = "quart", 
+                         split = True, dodge = True, 
+                         statloc = fig_plocS9[k // 2], statline = False, 
+                         title = fig_ttlsS9[k], legend_vert = True, 
+                         legend_out = True, 
+                         legend_title = "Response" if k < 2 else "Clonotype\nExpansion", 
+                         ax = ax)
+    ax.set_ylim([0 - fig_ylimS9[k // 2] - 0.1, 1 + fig_ylimS9[k // 2]]);
+    ax.set_yticks(np.arange(0, 1.2, 0.2).round(1));
+    if k == 0:    ax.legend([ ], [ ]);
+    if not k % 2:
+        ax.set_ylabel("Prediction score", y = 0.52, **legend_fonts["item"]);
+    
+    figS9_I.text(x = fig_llocsS9[0][k % 2], y = fig_llocsS9[1][k // 2], 
+                 s = lbl, **panel_fonts);                                      # add panel labels
 
-axS7_I["B"] = make_violinplot(data = fig_dataS7B, x = "cell_type", y = "score", 
-                              hue = "Response", stats = fig_statS7B, 
-                              hue_order = ["R", "NR"], inner = "quart", 
-                              split = True, dodge = True, statloc = fig_plocS7, 
-                              statline = False, title = fig_ttlsS7["B"], 
-                              legend_vert = True, legend_out = True, 
-                              legend_title = "Response", ax = axS7_I["B"])
-axS7_I["B"].set_ylim([0 - fig_ylimS7, 1 + fig_ylimS7]);
-axS7_I["B"].set_yticks(ticks  = np.arange(0, 1.2, 0.2), 
-                       labels = np.arange(0, 1.2, 0.2));
-axS7_I["B"].yaxis.set_major_formatter("{x:0.1f}");
-axS7_I["B"].set_xticks(ticks  = range(len(cell_info_im1)), 
-                       labels = cell_info_im1.label.map(
-                           lambda x: x.replace(" (", "\n(")));
-axS7_I["B"].tick_params(axis = "both", labelsize = label_fonts["size"]);
-axS7_I["B"].get_legend().set_bbox_to_anchor([1.06, 0.35, 0.4, 0.4]);
-figS7_I.text(x = fig_llocsS7[0][1], y = fig_llocsS7[1][0], s = "B", 
-             **panel_fonts);
 
-fig_ylimS7C = [0.8, 0.7];   fig_plocS7C = 0.72
-
-axS7_I["C"] = make_violinplot(data = fig_dataS7C, x = "cell_type", y = "score", 
-                              hue = "Response", stats = fig_statS7C, 
-                              hue_order = ["E", "NE"], inner = "quart", 
-                              split = True, dodge = True, 
-                              statloc = fig_plocS7C, 
-                              statline = False, title = fig_ttlsS7["C"], 
-                              legend_vert = True, legend_out = True, 
-                              legend_title = "Clonotype\nExpansion", 
-                              ax = axS7_I["C"])
-axS7_I["C"].set_ylim([0 - fig_ylimS7C[0], 1 + fig_ylimS7C[1]]);
-axS7_I["C"].set_yticks(ticks  = np.arange(0, 1.2, 0.2), 
-                       labels = np.arange(0, 1.2, 0.2));
-axS7_I["C"].yaxis.set_major_formatter("{x:0.1f}");
-axS7_I["C"].set_xticks(ticks  = range(len(cell_info_im2)), 
-                       labels = cell_info_im2.label.map(
-                           lambda x: x.replace(" (", "\n(").replace("_", "\n")));
-axS7_I["C"].tick_params(axis = "both", labelsize = label_fonts["size"]);
-axS7_I["C"].set_ylabel("Prediction score", **legend_fonts["item"]);
-axS7_I["C"].get_legend().set_bbox_to_anchor([1.03, 0.35, 0.4, 0.4]);
-figS7_I.text(x = fig_llocsS7[0][0], y = fig_llocsS7[1][1], s = "C", 
-             **panel_fonts);
-
-figS7_I.tight_layout(h_pad = 4, w_pad = 2)
+figS9_I.tight_layout(h_pad = 4, w_pad = 2)
 plt.show()
 
 
@@ -966,13 +917,14 @@ if svdat:
     fig_path = data_path + "../plots/final_plots7/"    
     os.makedirs(fig_path, exist_ok = True)                                     # creates figure dir if it doesn't exist
     
-    fig_fileS7_I = "all_predictions_sc_chemo_th0.99_ENS2_allfeatures_5foldCV.pdf"
-    figS7_I.savefig(fig_path + fig_fileS7_I, dpi = 600)
+    fig_fileS9_I = "all_predictions_sc_chemo_th0.99_ENS2_allfeatures_5foldCV.pdf"
+    figS9_I.savefig(fig_path + fig_fileS9_I, dpi = 600)
+    print(fig_fileS9_I)
 
 
-#%% make supp. fig. 7-II.
+#%% make supp fig 9-II.
 
-svdat = False
+svdat = False                                                                  # set as True to save data
 
 ## plot parameters.
 sns.set_style("ticks")
@@ -996,47 +948,30 @@ legend_fonts = {"item" : {"size": 12, "weight": "regular"},
                 "title": {"size": 16, "weight": "bold"}}
 
 ## radar charts.
-fig_ttlsS7   = {"D": "Zhang et al.: Chemotherapy", 
-                "E": "Zhang et al.: Chemotherapy + ICB"}
-fig_llocsS7  = [0.02, 0.52]
-
-
-## make radar axes/ticks.
-fig_thetaS7 = RadarChart(num_vars = len(fig_dataS7DE), frame = "circle")
-fig_baseS7  = [0.5] * len(fig_thetaS7)
-fig_ticksS7 = ["B-cells", "Myeloid" + " " * 4, "T-cells",                      # only 4 ticks- so fix manually
+fig_llocsS9 = [0.02, 0.52]
+fig_thetaS9 = RadarChart(num_vars = len(fig_dataS9[3]), frame = "circle")
+fig_baseS9  = [0.5] * len(fig_thetaS9)
+fig_ticksS9 = ["B-cells", "Myeloid" + " " * 4, "T-cells",                      # only 4 ticks- so fix manually
                " " * 10 + "Pseudobulk"]
+fig_ttlsS9  = ["Zhang et al.: Chemotherapy", 
+               "Zhang et al.: Chemotherapy + ICB"]
 
-figS7_II, axS7_II = plt.subplots(figsize = (12, 5), nrows = 1, ncols = 2, 
+figS9_II, axS9_II = plt.subplots(figsize = (12, 5), nrows = 1, ncols = 2, 
                                  subplot_kw = {"projection": "radar"})
-axS7_II = dict(zip(list("DE"), axS7_II))
+axS9_II = dict(zip(list("DE"), axS9_II))
 
 ## make radars.
-axS7_II["D"] = make_radar_lines(theta = fig_thetaS7, 
-                                data = fig_dataS7DE["chemo"], 
-                                labels = fig_ticksS7, color = colors[3], 
-                                alpha = 0.4, ls = "-", lw = 2, ms = 8, 
-                                ax = axS7_II["D"])
-axS7_II["D"] = make_radar_lines(theta = fig_thetaS7, data = fig_baseS7, 
-                                title = fig_ttlsS7["D"], color = colors[-3], 
-                                alpha = 0.15, ls = ":", ms = 8, 
-                                ax = axS7_II["D"])
-axS7_II["D"].set_rlim([0.25, 1.05]);
-figS7_II.text(x = fig_llocsS7[0], y = 0.96, s = "D", **panel_fonts);
+for k, (lbl, ax) in enumerate(axS9_II.items(), start = 3):
+    ax = make_radar_lines(theta = fig_thetaS9, data = fig_dataS9[k]["AUC"], 
+                          labels = fig_ticksS9, color = colors[3], alpha = 0.4, 
+                          ls = "-", lw = 2, ms = 8, ax = ax)
+    ax = make_radar_lines(theta = fig_thetaS9, data = fig_baseS9, 
+                          title = fig_ttlsS9[k - 3], color = colors[-3], 
+                          alpha = 0.15, ls = ":", ms = 8, ax = ax)
+    ax.set_rlim([0.25, 1.05])
+    figS9_II.text(x = fig_llocsS9[k - 3], y = 0.96, s = lbl, **panel_fonts);   # add panel labels
 
-axS7_II["E"] = make_radar_lines(theta = fig_thetaS7, 
-                                data = fig_dataS7DE["icb"], 
-                                labels = fig_ticksS7, color = colors[3], 
-                                alpha = 0.4, ls = "-", lw = 2, ms = 8, 
-                                ax = axS7_II["E"])
-axS7_II["E"] = make_radar_lines(theta = fig_thetaS7, data = fig_baseS7, 
-                                title = fig_ttlsS7["E"], color = colors[-3], 
-                                alpha = 0.15, ls = ":", ms = 8, 
-                                ax = axS7_II["E"])
-axS7_II["E"].set_rlim([0.25, 1.05]);
-figS7_II.text(x = fig_llocsS7[1], y = 0.96, s = "E", **panel_fonts);
-
-figS7_II.tight_layout(h_pad = 0, w_pad = 0)
+figS9_II.tight_layout(h_pad = 0, w_pad = 0)
 plt.show()
 
 
@@ -1045,13 +980,14 @@ if svdat:
     fig_path = data_path + "../plots/final_plots7/"    
     os.makedirs(fig_path, exist_ok = True)                                     # creates figure dir if it doesn't exist
     
-    fig_fileS7_II = "all_aucs_sc_zhang_chemo_th0.99_ENS2_allfeatures_5foldCV.pdf"
-    figS7_II.savefig(fig_path + fig_fileS7_II, dpi = 600)
+    fig_fileS9_II = "all_aucs_sc_zhang_chemo_th0.99_ENS2_allfeatures_5foldCV.pdf"
+    figS9_II.savefig(fig_path + fig_fileS9_II, dpi = 600)
+    print(fig_fileS9_II)
 
 
-#%% make supp. fig. 7-III.
+#%% make supp fig 7-III.
 
-svdat = False
+svdat = False                                                                  # set as True to save data
 
 ## plot parameters.
 sns.set_style("ticks")
@@ -1075,35 +1011,30 @@ legend_fonts = {"item" : {"size": 12, "weight": "regular"},
                 "title": {"size": 16, "weight": "bold"}}
 
 ## radar charts.
-fig_ttlsS7  = "Bassez et al.: Chemotherapy + ICB"
+fig_thetaS9 = RadarChart(num_vars = len(fig_dataS9[-1]), frame = "circle")
+fig_baseS9  = [0.5] * len(fig_thetaS9)
+fig_ticksS9 = pad_radar_ticks(ticks = fig_dataS9[-1].model, pads = [12, 8])
+fig_ticksS9[-1] = " " * 6 + fig_ticksS9[-1]                                    # manually fix pseudobulk label
 
-## make radar axes/ticks.
-fig_thetaS7 = RadarChart(num_vars = len(fig_dataS7F), frame = "circle")
-fig_baseS7  = [0.5] * len(fig_thetaS7)
-fig_ticksS7 = pad_radar_ticks(
-    ticks = fig_dataS7F.cell_type.replace(" (", "\n("), pads = [12, 8])
-fig_ticksS7[-1] = " " * 6 + fig_ticksS7[-1]                                    # manually fix pseudobulk label
-
-figS7_III, axS7_III = plt.subplots(figsize = (6, 5), nrows = 1, ncols = 1, 
+figS9_III, axS9_III = plt.subplots(figsize = (6, 5), nrows = 1, ncols = 1, 
                                    subplot_kw = {"projection": "radar"})
 
 ## make radars.
-axS7_III = make_radar_lines(theta = fig_thetaS7, data = fig_dataS7F["icb"], 
-                            labels = fig_ticksS7, color = colors[3], 
+axS9_III = make_radar_lines(theta = fig_thetaS9, data = fig_dataS9[-1]["AUC"], 
+                            labels = fig_ticksS9, color = colors[3], 
                             alpha = 0.4, ls = "-", lw = 2, ms = 8, 
-                            ax = axS7_III)
-axS7_III = make_radar_lines(theta = fig_thetaS7, data = fig_baseS7, 
-                            title = fig_ttlsS7, color = colors[-3], 
-                            alpha = 0.15, ls = ":", ms = 8, ax = axS7_III)
-axS7_III.set_rlim([0.25, 0.85]);
-figS7_III.text(x = -0.02, y = 0.94, s = "F", **panel_fonts);
-
-## format legends.
-axS7_III.legend(labels = ["Cell type", "Random"], loc = (1.16, 0.45), 
+                            ax = axS9_III)
+axS9_III = make_radar_lines(theta = fig_thetaS9, data = fig_baseS9, 
+                            title = "Bassez et al.: Chemotherapy + ICB", 
+                            color = colors[-3], alpha = 0.15, ls = ":", ms = 8, 
+                            ax = axS9_III)
+axS9_III.set_rlim([0.25, 0.85])
+axS9_III.legend(labels = ["Cell type", "Random"], loc = (1.16, 0.45), 
                 title = "AUC", prop = legend_fonts["item"], 
-                title_fontproperties = legend_fonts["title"])
+                title_fontproperties = legend_fonts["title"])                  # format legends
+figS9_III.text(x = -0.02, y = 0.94, s = "F", **panel_fonts);                   # add panel label
 
-figS7_III.tight_layout(h_pad = 0, w_pad = 0)
+figS9_III.tight_layout(h_pad = 0, w_pad = 0)
 plt.show()
 
 
@@ -1112,181 +1043,87 @@ if svdat:
     fig_path = data_path + "../plots/final_plots7/"    
     os.makedirs(fig_path, exist_ok = True)                                     # creates figure dir if it doesn't exist
     
-    fig_fileS7_III = "all_aucs_sc_bassez_chemo_th0.99_ENS2_allfeatures_5foldCV.pdf"
-    figS7_III.savefig(fig_path + fig_fileS7_III, dpi = 600)
+    fig_fileS9_III = "all_aucs_sc_bassez_chemo_th0.99_ENS2_allfeatures_5foldCV.pdf"
+    figS9_III.savefig(fig_path + fig_fileS9_III, dpi = 600)
+    print(fig_fileS9_III)
 
 
-#%% prepare data for supp. fig. 8.
+#%% prepare data for supp figs 10-11.
 ## CE, ENDO, PB, NE, MYL, B, CAF
 
-var_surv   = "OS"
-var_group  = "groups_05"
+def get_surv_data(y_test, y_pred, clin, group, models, endpoint):
+    surv_data = { }
+    for mdl in models:
+        ## get data for K-M plot.
+        km_dat = pd.concat([y_pred[mdl][group].rename(index = "Group"), 
+                            y_test[[endpoint, f"{endpoint}_time"]], 
+                            clin["Clinical_subtype"]], axis = 1)
+        
+        km_mdl, km_stat = { }, { }
+        for sb, dat in km_dat.groupby(by = "Clinical_subtype", sort = True):
+            ## fit K-M models per subtype.
+            km_mdl[sb] = { 
+                grp: KaplanMeierFitter(
+                    alpha = 0.05, label = grp).fit(
+                    event_observed = df[endpoint], 
+                    durations      = df[f"{endpoint}_time"], 
+                    label          = ("High" if grp else "Low") + "-score")
+                for grp, df in dat.groupby(by = "Group", sort = True)}
+            
+            
+            ## do log-rank test per subtype.
+            km_stat[sb] = logrank_test(
+                event_observed_A = dat[dat.Group.eq(1)][endpoint], 
+                durations_A      = dat[dat.Group.eq(1)][f"{endpoint}_time"], 
+                event_observed_B = dat[dat.Group.eq(0)][endpoint], 
+                durations_B      = dat[dat.Group.eq(0)][f"{endpoint}_time"])
+        
+        ## save data for plotting.
+        surv_data[mdl.replace("_", " ")] = {
+            sb: {"data1": km_mdl[sb][1], "data2": km_mdl[sb][0], 
+                 "stat": km_stat[sb]} for sb in subtypes_all}
+        
+    return surv_data
 
-cell_types = ["Cancer_Epithelial", "Endothelial", "Plasmablasts", 
-              "Normal_Epithelial", "Myeloid", "B-cells", "CAFs"]
 
 ## survival info.
-surv_info  = pd.concat([clin_test_surv, y_test_surv], axis = 1).groupby(
+surv_info = pd.concat([y_test_surv, clin_test_surv], axis = 1).groupby(
     by = "Clinical_subtype", sort = True).apply(
-    lambda df: pd.Series({
-        "n": len(df), f"{var_surv}_events": df[var_surv].sum(), 
-        f"{var_surv}_time_median": df[f"{var_surv}_time"].median()}, 
-        dtype = int), 
+    lambda dat: pd.Series({
+        "n"           : len(dat), 
+        "OS_events"   : dat.OS.sum(), 
+        "OS_time_med" : int(dat.OS_time.median()), 
+        "PFI_events"  : dat.PFI.sum(), 
+        "PFI_time_med": int(dat.PFI_time.median())}), 
     include_groups = False).reset_index()
 surv_info["label"] = surv_info.apply(
     lambda x: f"TCGA-BRCA: {x.Clinical_subtype} (n = {x.n})", axis = 1)
 
 
-fig_dataS8 = { }
-for ctp in cell_types:
-    ## get data for kaplan-meier plot.
-    km_data_ctp = pd.concat([
-        y_pred_surv[ctp], y_test_surv[[var_surv, f"{var_surv}_time"]], 
-        clin_test_surv[["Clinical_subtype"]]], axis = 1)
-    
-    ## get subtype-specific data.
-    km_erpos1  = km_data_ctp.pipe(
-        lambda df: df[df.Clinical_subtype.eq("ER+,HER2-") & 
-                      df[var_group].eq(1)])
-    km_erpos2  = km_data_ctp.pipe(
-        lambda df: df[df.Clinical_subtype.eq("ER+,HER2-") & 
-                      df[var_group].eq(0)])
-    
-    km_tnbc1   = km_data_ctp.pipe(
-        lambda df: df[df.Clinical_subtype.eq("TNBC") & 
-                      df[var_group].eq(1)])
-    km_tnbc2   = km_data_ctp.pipe(
-        lambda df: df[df.Clinical_subtype.eq("TNBC") & 
-                      df[var_group].eq(0)])
-    
-    ## model for each subtype.
-    ## ER+, HER2-.
-    fig_data_ctp11 = KaplanMeierFitter(alpha = 0.05).fit(
-        event_observed = km_erpos1[var_surv], 
-        durations = km_erpos1[f"{var_surv}_time"], 
-        label = "High-score")
-    fig_data_ctp12 = KaplanMeierFitter(alpha = 0.05).fit(
-        event_observed = km_erpos2[var_surv], 
-        durations = km_erpos2[f"{var_surv}_time"], 
-        label = "Low-score")
-    
-    ## TNBC.
-    fig_data_ctp21 = KaplanMeierFitter(alpha = 0.05).fit(
-        event_observed = km_tnbc1[var_surv], 
-        durations = km_tnbc1[f"{var_surv}_time"], 
-        label = "High-score")
-    fig_data_ctp22 = KaplanMeierFitter(alpha = 0.05).fit(
-        event_observed = km_tnbc2[var_surv], 
-        durations = km_tnbc2[f"{var_surv}_time"], 
-        label = "Low-score")
-    
-    ## perform log-rank test.
-    fig_stat_ctp   = {
-        "ER+,HER2-": logrank_test(
-            event_observed_A = km_erpos1[var_surv], 
-            event_observed_B = km_erpos2[var_surv], 
-            durations_A = km_erpos1[f"{var_surv}_time"], 
-            durations_B = km_erpos2[f"{var_surv}_time"]), 
-        "TNBC": logrank_test(
-            event_observed_A = km_tnbc1[var_surv], 
-            event_observed_B = km_tnbc2[var_surv], 
-            durations_A = km_tnbc1[f"{var_surv}_time"], 
-            durations_B = km_tnbc2[f"{var_surv}_time"])}
-
-    fig_dataS8[ctp] = {
-        "ER+,HER2-": {"data_grp1": fig_data_ctp11, "data_grp2": fig_data_ctp12, 
-                      "stat": fig_stat_ctp["ER+,HER2-"]}, 
-        "TNBC"     : {"data_grp1": fig_data_ctp21, "data_grp2": fig_data_ctp22, 
-                      "stat": fig_stat_ctp["TNBC"]} }
+## cell types to consider.
+models = ["Cancer_Epithelial", "Endothelial", "Plasmablasts", 
+          "Normal_Epithelial", "Myeloid", "B-cells", "CAFs"]
 
 
-#%% prepare data for supp. fig. 9.
-## CE, ENDO, PB, NE, MYL, B, CAF
+## prepare data for supp fig 10-11: OS, PFI.
+fig_dataS10 = get_surv_data(y_test   = y_test_surv, 
+                            y_pred   = y_pred_surv, 
+                            clin     = clin_test_surv, 
+                            group    = "groups_05", 
+                            models   = models, 
+                            endpoint = "OS")
 
-var_surv   = "PFI"
-var_group  = "groups_05"
-
-cell_types = ["Cancer_Epithelial", "Endothelial", "Plasmablasts", 
-              "Normal_Epithelial", "Myeloid", "B-cells", "CAFs"]
-
-## survival info.
-surv_info  = pd.concat([clin_test_surv, y_test_surv], axis = 1).groupby(
-    by = "Clinical_subtype", sort = True).apply(
-    lambda df: pd.Series({
-        "n": len(df), f"{var_surv}_events": df[var_surv].sum(), 
-        f"{var_surv}_time_median": df[f"{var_surv}_time"].median()}, 
-        dtype = int), 
-    include_groups = False).reset_index()
-surv_info["label"] = surv_info.apply(
-    lambda x: f"TCGA-BRCA: {x.Clinical_subtype} (n = {x.n})", axis = 1)
+fig_dataS11 = get_surv_data(y_test   = y_test_surv, 
+                            y_pred   = y_pred_surv, 
+                            clin     = clin_test_surv, 
+                            group    = "groups_05", 
+                            models   = models, 
+                            endpoint = "PFI")
 
 
-fig_dataS9 = { }
-for ctp in cell_types:
-    ## get data for kaplan-meier plot.
-    km_data_ctp = pd.concat([
-        y_pred_surv[ctp], y_test_surv[[var_surv, f"{var_surv}_time"]], 
-        clin_test_surv[["Clinical_subtype"]]], axis = 1)
-    
-    ## get subtype-specific data.
-    km_erpos1  = km_data_ctp.pipe(
-        lambda df: df[df.Clinical_subtype.eq("ER+,HER2-") & 
-                      df[var_group].eq(1)])
-    km_erpos2  = km_data_ctp.pipe(
-        lambda df: df[df.Clinical_subtype.eq("ER+,HER2-") & 
-                      df[var_group].eq(0)])
-    
-    km_tnbc1   = km_data_ctp.pipe(
-        lambda df: df[df.Clinical_subtype.eq("TNBC") & 
-                      df[var_group].eq(1)])
-    km_tnbc2   = km_data_ctp.pipe(
-        lambda df: df[df.Clinical_subtype.eq("TNBC") & 
-                      df[var_group].eq(0)])
-    
-    ## model for each subtype.
-    ## ER+, HER2-.
-    fig_data_ctp11 = KaplanMeierFitter(alpha = 0.05).fit(
-        event_observed = km_erpos1[var_surv], 
-        durations = km_erpos1[f"{var_surv}_time"], 
-        label = "High-score")
-    fig_data_ctp12 = KaplanMeierFitter(alpha = 0.05).fit(
-        event_observed = km_erpos2[var_surv], 
-        durations = km_erpos2[f"{var_surv}_time"], 
-        label = "Low-score")
-    
-    ## TNBC.
-    fig_data_ctp21 = KaplanMeierFitter(alpha = 0.05).fit(
-        event_observed = km_tnbc1[var_surv], 
-        durations = km_tnbc1[f"{var_surv}_time"], 
-        label = "High-score")
-    fig_data_ctp22 = KaplanMeierFitter(alpha = 0.05).fit(
-        event_observed = km_tnbc2[var_surv], 
-        durations = km_tnbc2[f"{var_surv}_time"], 
-        label = "Low-score")
-    
-    ## perform log-rank test.
-    fig_stat_ctp   = {
-        "ER+,HER2-": logrank_test(
-            event_observed_A = km_erpos1[var_surv], 
-            event_observed_B = km_erpos2[var_surv], 
-            durations_A = km_erpos1[f"{var_surv}_time"], 
-            durations_B = km_erpos2[f"{var_surv}_time"]), 
-        "TNBC": logrank_test(
-            event_observed_A = km_tnbc1[var_surv], 
-            event_observed_B = km_tnbc2[var_surv], 
-            durations_A = km_tnbc1[f"{var_surv}_time"], 
-            durations_B = km_tnbc2[f"{var_surv}_time"])}
+#%% make supp fig 10.
 
-    fig_dataS9[ctp] = {
-        "ER+,HER2-": {"data_grp1": fig_data_ctp11, "data_grp2": fig_data_ctp12, 
-                      "stat": fig_stat_ctp["ER+,HER2-"]}, 
-        "TNBC"     : {"data_grp1": fig_data_ctp21, "data_grp2": fig_data_ctp22, 
-                      "stat": fig_stat_ctp["TNBC"]} }
-
-
-#%% make supp. fig. 8.
-
-svdat = False
+svdat = False                                                                  # set as True to save data
 
 ## plot parameters.
 sns.set_style("ticks")
@@ -1309,41 +1146,31 @@ label_fonts  = {"weight": "regular", "size": 14, "color": "#000000"}
 legend_fonts = {"item" : {"size": 12, "weight": "regular"}, 
                 "title": {"size": 16, "weight": "bold"}}
 
-## all plots.
-fig_llocsS8  = [[0.00, 0.45], (np.arange(7, 0, -1) / 7 - 0.02).tolist()]
-fig_labelsS8 = np.reshape(list(string.ascii_uppercase[:14]), [7, 2])
+## K-M plots.
+fig_llocsS10 = [[0.00, 0.45], (np.arange(7, 0, -1) / 7 - 0.02).tolist()]
+fig_lblsS10  = np.reshape(list(string.ascii_uppercase[:14]), [7, 2])
 
-figS8, axS8 = plt.subplots(figsize = (16, 18), nrows = 7, ncols = 2)
-for k, (lbls, (ctp, ctp_data)) in enumerate(
-        zip(fig_labelsS8, fig_dataS8.items())):
-    ttl = "Cell type = " + ctp.replace('_', ' ')
-    axS8[k, 0] = make_km_plot(
-        **ctp_data["ER+,HER2-"], title = ttl, risk_counts = False, 
-        legend = False, ax = axS8[k, 0])
-    axS8[k, 0].set_xlabel(None);    axS8[k, 0].set_ylabel(None)
-    figS8.text(x = fig_llocsS8[0][0], y = fig_llocsS8[1][k], s = lbls[0], 
-               **panel_fonts)
-    
-    axS8[k, 1] = make_km_plot(
-        **ctp_data["TNBC"], title = ttl, risk_counts = False, 
-        legend = bool(k == 3), ax = axS8[k, 1])
-    axS8[k, 1].set_xlabel(None);    axS8[k, 1].set_ylabel(None)
-    figS8.text(x = fig_llocsS8[0][1], y = fig_llocsS8[1][k], s = lbls[1], 
-               **panel_fonts)
-    
-    if k == 0:
-        axS8[k, 0].set_title(
-            surv_info.label[0].replace(":", " OS:") + "\n" + ttl, 
-            y = 1.02, **legend_fonts["title"]);
-        axS8[k, 1].set_title(
-            surv_info.label[1].replace(":", " OS:") + "\n" + ttl, 
-            y = 1.02, **legend_fonts["title"]);
+figS10, axS10 = plt.subplots(figsize = (16, 18), nrows = 7, ncols = 2)
+axS10 = dict(zip(fig_lblsS10.ravel(), axS10.ravel()))
 
-figS8.supxlabel("Time in days", y = 0.00, x = 0.47, **label_fonts);
-figS8.supylabel("Survival probability", x = -0.02, y = 0.50, **label_fonts);
+## make plots.
+for i, (lbls, mdl) in enumerate(zip(fig_lblsS10, fig_dataS10.keys())):
+    for j, (lbl, sb) in enumerate(zip(lbls, subtypes_all)):
+        ax  = axS10[lbl]
+        ttl = surv_info.label[j].replace(":", " OS:") + "\n" if i == 0 else ""
+        ttl += f"Cell type = {mdl}"
+        ax  = make_km_plot(**fig_dataS10[mdl][sb], title = ttl, 
+                           risk_counts = False, legend = ((i, j) == (3, 1)), 
+                           ax = ax)
+        ax.set_xlabel(None);    ax.set_ylabel(None)
+        figS10.text(x = fig_llocsS10[0][j], y = fig_llocsS10[1][i], s = lbl, 
+                    **panel_fonts);                                            # add panel labels
+        
+## add common labels.
+figS10.supxlabel("Time in days", y = 0.00, x = 0.47, **label_fonts);
+figS10.supylabel("Survival probability", x = -0.02, y = 0.50, **label_fonts);
 
-figS8.tight_layout(h_pad = 4, w_pad = 6)
-
+figS10.tight_layout(h_pad = 4, w_pad = 6)
 plt.show()
 
 
@@ -1352,13 +1179,14 @@ if svdat:
     fig_path = data_path + "../plots/final_plots7/"    
     os.makedirs(fig_path, exist_ok = True)                                     # creates figure dir if it doesn't exist
     
-    fig_fileS8 = "all_predictions_survival_os_tcga_chemo_th0.99_ENS2_25features_5foldCV.pdf"
-    figS8.savefig(fig_path + fig_fileS8, dpi = 600)
+    fig_fileS10 = "all_predictions_survival_os_tcga_chemo_th0.99_ENS2_25features_5foldCV.pdf"
+    figS10.savefig(fig_path + fig_fileS10, dpi = 600)
+    print(fig_fileS10)
 
 
-#%% make supp. fig. 9.
+#%% make supp fig 11.
 
-svdat = False
+svdat = False                                                                  # set as True to save data
 
 ## plot parameters.
 sns.set_style("ticks")
@@ -1381,41 +1209,31 @@ label_fonts  = {"weight": "regular", "size": 14, "color": "#000000"}
 legend_fonts = {"item" : {"size": 12, "weight": "regular"}, 
                 "title": {"size": 16, "weight": "bold"}}
 
-## all plots.
-fig_llocsS9  = [[0.00, 0.45], (np.arange(7, 0, -1) / 7 - 0.02).tolist()]
-fig_labelsS9 = np.reshape(list(string.ascii_uppercase[:14]), [7, 2])
+## K-M plots.
+fig_llocsS11 = [[0.00, 0.45], (np.arange(7, 0, -1) / 7 - 0.02).tolist()]
+fig_lblsS11  = np.reshape(list(string.ascii_uppercase[:14]), [7, 2])
 
-figS9, axS9 = plt.subplots(figsize = (16, 18), nrows = 7, ncols = 2)
-for k, (lbls, (ctp, ctp_data)) in enumerate(
-        zip(fig_labelsS9, fig_dataS9.items())):
-    ttl = "Cell type = " + ctp.replace('_', ' ')
-    axS9[k, 0] = make_km_plot(
-        **ctp_data["ER+,HER2-"], title = ttl, risk_counts = False, 
-        legend = False, ax = axS9[k, 0])
-    axS9[k, 0].set_xlabel(None);    axS9[k, 0].set_ylabel(None)
-    figS9.text(x = fig_llocsS9[0][0], y = fig_llocsS9[1][k], s = lbls[0], 
-               **panel_fonts)
-    
-    axS9[k, 1] = make_km_plot(
-        **ctp_data["TNBC"], title = ttl, risk_counts = False, 
-        legend = bool(k == 3), ax = axS9[k, 1])
-    axS9[k, 1].set_xlabel(None);    axS9[k, 1].set_ylabel(None)
-    figS9.text(x = fig_llocsS9[0][1], y = fig_llocsS9[1][k], s = lbls[1], 
-               **panel_fonts)
-    
-    if k == 0:
-        axS9[k, 0].set_title(
-            surv_info.label[0].replace(":", " PFI:") + "\n" + ttl, 
-            y = 1.02, **legend_fonts["title"]);
-        axS9[k, 1].set_title(
-            surv_info.label[1].replace(":", " PFI:") + "\n" + ttl, 
-            y = 1.02, **legend_fonts["title"]);
+figS11, axS11 = plt.subplots(figsize = (16, 18), nrows = 7, ncols = 2)
+axS11 = dict(zip(fig_lblsS11.ravel(), axS11.ravel()))
 
-figS9.supxlabel("Time in days", y = 0.00, x = 0.47, **label_fonts);
-figS9.supylabel("Survival probability", x = -0.02, y = 0.50, **label_fonts);
+## make plots.
+for i, (lbls, mdl) in enumerate(zip(fig_lblsS11, fig_dataS11.keys())):
+    for j, (lbl, sb) in enumerate(zip(lbls, subtypes_all)):
+        ax  = axS11[lbl]
+        ttl = surv_info.label[j].replace(":", " PFI:") + "\n" if i == 0 else ""
+        ttl += f"Cell type = {mdl}"
+        ax  = make_km_plot(**fig_dataS11[mdl][sb], title = ttl, 
+                           risk_counts = False, legend = ((i, j) == (3, 1)), 
+                           ax = ax)
+        ax.set_xlabel(None);    ax.set_ylabel(None)
+        figS11.text(x = fig_llocsS11[0][j], y = fig_llocsS11[1][i], s = lbl, 
+                    **panel_fonts);                                            # add panel labels
+        
+## add common labels.
+figS11.supxlabel("Time in days", y = 0.00, x = 0.47, **label_fonts);
+figS11.supylabel("Survival probability", x = -0.02, y = 0.50, **label_fonts);
 
-figS9.tight_layout(h_pad = 4, w_pad = 6)
-
+figS11.tight_layout(h_pad = 4, w_pad = 6)
 plt.show()
 
 
@@ -1424,6 +1242,6 @@ if svdat:
     fig_path = data_path + "../plots/final_plots7/"    
     os.makedirs(fig_path, exist_ok = True)                                     # creates figure dir if it doesn't exist
     
-    fig_fileS9 = "all_predictions_survival_pfi_tcga_chemo_th0.99_ENS2_25features_5foldCV.pdf"
-    figS9.savefig(fig_path + fig_fileS9, dpi = 600)
+    fig_fileS11 = "all_predictions_survival_pfi_tcga_chemo_th0.99_ENS2_25features_5foldCV.pdf"
+    figS11.savefig(fig_path + fig_fileS11, dpi = 600)
 

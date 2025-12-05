@@ -1,24 +1,24 @@
 #!/bin/bash
-#SBATCH --time=96:00:00
 #SBATCH --mem=80g
+#SBATCH --time=96:00:00
+#SBATCH --partition=norm
 #SBATCH --gres=lscratch:20
-#SBATCH --partition=ccr
+#SBATCH --output=codefacs_bm_no_mix_noisy2_%j.out
 #SBATCH --mail-type=BEGIN,END,TIME_LIMIT_50,TIME_LIMIT_80,FAIL
 
-​
+
 #### --------------------------------------------------------------
 
 ## get necessary variables.
 ## directories.
 PROJ="/data/Lab_ruppin/projects/TME_contribution_project";
-ODIR="$PROJ/data/TCGA";
+ODIR="$PROJ/data/SC_data/WuEtAl2021";
 RUN_CF="$PROJ/analysis/CODEFACS/CODEFACS2/scripts";
-ODIR_CF="$RUN_CF/out_codefacs_tcga_v2";
+ODIR_CF="$RUN_CF/out_codefacs_bm_no_mix_noisy2";
 
 ## data files.
-BULK="$ODIR/TCGA_BRCA_htseq_TPM_matched2.tsv";
-SIGN="$PROJ/data/celltype_signature/signature_scSigR_BRCA.csv";
-
+BULK="$ODIR/WuEtAl2021_benchmark_bulk_tpm_no_mix_noisy2.tsv";
+SIGN="$ODIR/WuEtAl2021_benchmark_signature.txt";
 
 ## create output directories.
 if [ ! -d "$ODIR_CF" ]; then

@@ -1,12 +1,12 @@
 #!/bin/bash
-#SBATCH --time=96:00:00
 #SBATCH --mem=80g
+#SBATCH --time=96:00:00
+#SBATCH --partition=norm
 #SBATCH --gres=lscratch:20
-#SBATCH --partition=ccr
-#SBATCH --mail-type=BEGIN,END,TIME_LIMIT_50,TIME_LIMIT_80,FAIL
 #SBATCH --output=codefacs_bm_no_mix_noisy_%j.out
+#SBATCH --mail-type=BEGIN,END,TIME_LIMIT_50,TIME_LIMIT_80,FAIL
 
-​
+
 #### --------------------------------------------------------------
 
 ## get necessary variables.
@@ -19,7 +19,6 @@ ODIR_CF="$RUN_CF/out_codefacs_bm_no_mix_noisy";
 ## data files.
 BULK="$ODIR/WuEtAl2021_benchmark_bulk_tpm_no_mix_noisy.tsv";
 SIGN="$ODIR/WuEtAl2021_benchmark_signature.txt";
-
 
 ## create output directories.
 if [ ! -d "$ODIR_CF" ]; then
