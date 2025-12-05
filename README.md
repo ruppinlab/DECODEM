@@ -3,13 +3,15 @@
 # DECODEM / DECODEMi: Systematic assessment of the tumor microenvironment from bulk transcriptome  
 
 
-The relevant manuscript is now out at Cancer Letters:  
-**[S. R. Dhruba, S. Sahni, B. Wang, D. Wu, P. S. Rajagopal, Y. Schmidt, E. Shulman, S. Sinha, S. Sammut, C. Caldas, K. Wang, E. Ruppin. <b>"Enhanced prediction of breast cancer patient response to chemotherapy by integrating deconvolved expression patterns of immune, stromal and tumor cells"</b>, Cancer Letters, 2025.](https://doi.org/10.1016/j.canlet.2025.218101)**
+<b>
+The relevant manuscript is now out at Cancer Letters!  
+[S. R. Dhruba, S. Sahni, B. Wang, D. Wu, P. S. Rajagopal, Y. Schmidt, E. Shulman, S. Sinha, S. Sammut, C. Caldas, K. Wang, E. Ruppin. <b>"Enhanced prediction of breast cancer patient response to chemotherapy by integrating deconvolved expression patterns of immune, stromal and tumor cells"</b>, Cancer Letters, 2025.](https://doi.org/10.1016/j.canlet.2025.218101)
+</b>
 
 We developed a novel computational framework called **DECODEM** (<ins>DE</ins>coupling <ins>C</ins>ell-type-specific <ins>O</ins>utcomes using <ins>DE</ins>convolution and <ins>M</ins>achine learning) that can systematically assess the roles of the diverse cell types in the tumor microenvironment (TME) in a given phenotype from bulk transcriptomics. In this work, we investigate the association of the cell types in breast cancer TME (BC-TME) to patient response to neoadjuvant chemotherapy (responder vs. non-responder). The framework is divided into two steps:  
 
 1. **Deconvolution**: we use [CODEFACS](https://doi.org/10.5281/zenodo.5790343) to deconvolve the bulk gene expression into nine cell-type-specific gene expression profiles encompassing malignant, immune, and stromal cell types.  
-2. **Machine Learning**: we use a [**machine learning (ML) pipeline**](analysis/machine_learning/) to build nine cell-type-specific predictors of chemotherapy response using the deconvolved expression profiles.    
+2. **Machine Learning**: we use a **[machine learning](analysis/machine_learning/) (ML) pipeline** to build nine cell-type-specific predictors of chemotherapy response using the deconvolved expression profiles.    
 
 The output of the framework is the likelihood scores that the patients will respond to chemotherapy. We then **rank** the cell types within the BC-TME based on their predictive power (in terms of AUC, AP and DOR), identifying "prominent" cell types that provide improvements over the bulk mixture. We further validate the prominent cell types in multiple **independent** BC cohorts encompassing both bulk and single-cell (SC) transcriptomics.  
 <sub>
@@ -32,7 +34,7 @@ Our findings in breast cancer highlight the considerable predictive powers of th
 
 
 ## Dependencies  
-The deconvolution stage was performed on HPC environment using `R` and `Rslurm` (as part of CODEFACS). The CCI inference was performed by using LIRICS on the deconvolved data and [CellChat v2](https://github.com/sqjin/CellChat) on SC data using `R`.  
+The deconvolution (and CCI inference) stage was performed on (NIH Biowulf)[https://hpc.nih.gov/] HPC environment using `R` and `Rslurm`. 
 
 The ML predictors were developed on MacOS using `python` and further tested on linux (on HPC). The ML scripts can be run interactively using a `python` IDE or on command line as `python script_name.py`. Complementary analyses *i.e.*, data preprocessing, enrichment analysis, CCI validation in SC and plot generation were performed locally using `R` on RStudio.  
 
