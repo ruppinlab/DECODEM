@@ -34,7 +34,7 @@ Our findings in breast cancer highlight the considerable predictive powers of th
 ## Dependencies  
 The deconvolution (and CCI inference) stage was performed on [NIH Biowulf](https://hpc.nih.gov/) environment using `R` and `Rslurm`. 
 
-The ML predictors were developed on MacOS using `python` and further tested on linux (on HPC). The ML scripts can be run interactively using a `python` IDE or on command line as `python script_name.py`. Complementary analyses *i.e.*, data preprocessing, enrichment analysis, SC-CCI validation and some plot generation were performed locally using `R` on RStudio.  
+The ML predictors were developed on MacOS using `python` and further tested on linux (on HPC). The ML scripts can be run interactively using a `python` IDE or on command line as `python script_name.py`. Complementary analyses *i.e.*, data preprocessing, enrichment analysis, CCI validation in SC and some plot generation were performed locally using `R` on RStudio.  
 
 Dependencies for `python` scripts:  
 ```python
