@@ -1,7 +1,7 @@
 <div align="justify">
 
-# DECODEM / DECODEMi:  
-## Systematic assessment of the tumor microenvironment from bulk transcriptome  
+# DECODEM/DECODEMi:  
+## Systematic assessment of TME from bulk transcriptome  
 
 
 **The relevant manuscript is now out at Cancer Letters!  
