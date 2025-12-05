@@ -120,7 +120,7 @@ The enrichment analyses results and the figures (or panels) in the manuscript ca
 If `svdat = True` in the scripts, the figure panels will be saved in [data/plots](data/plots/) (in .pdf format).  
 
 
-### Reproducing the figures  
+## Reproducing the figures  
 Fig. 1D was generated using Biorender ([Dhruba, S. R. (2025)](https://BioRender.com/z38y774)). The remaining figures were generated using the following scripts in [analysis/enrichment_and_figures](analysis/enrichment_and_figures/) (and further polished using Adobe Illustrator):  
 
 - `generate_plots_ctp_vX.py`: generates Figs. 1A-B, 2, 3A-F, Supp. Fig. 2-3.  
