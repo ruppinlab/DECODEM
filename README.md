@@ -1,6 +1,6 @@
 <div align="justify">
 
-# DECODEM / DECODEMi: Systematic assessment of TME from bulk transcriptome  
+# DECODEM / DECODEMi: Systematic assessment of the breast TME from bulk transcriptome  
 
 
 **The relevant manuscript is now out at Cancer Letters!  
