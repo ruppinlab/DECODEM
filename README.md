@@ -131,12 +131,11 @@ If `svdat = True` in the scripts, the figure panels will be saved in [data/plots
 
 if `svdat = True` in the scripts, the figures will be saved in [data/plots](data/plots/) (in .pdf format).  
 
-The figures are further polished using Adobe Illustrator. 
-Examples of the figures generated are provided in [figures](figures/).  
+The figures were further polished using Adobe Illustrator. The final figures generated are provided in [figures](figures/).  
   
   
 ### Contact: 
-Saugato Rahman Dhruba (saugatorahman.dhruba@nih.gov)  
+Saugato Rahman Dhruba (dhruba018@gmail.com)  
 Cancer Data Science Lab, NCI, NIH  
 
 </div>
