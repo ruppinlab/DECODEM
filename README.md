@@ -3,7 +3,7 @@
 # DECODEM / DECODEMi: Systematic assessment of the tumor microenvironment from bulk transcriptome  
 
 <i>
-**The relevant manuscript is now out at [Cancer Letters](https://doi.org/10.1016/j.canlet.2025.218101). 
+The relevant manuscript is now out at [Cancer Letters](https://doi.org/10.1016/j.canlet.2025.218101). 
  
 S. R. Dhruba, S. Sahni, B. Wang, D. Wu, P. S. Rajagopal, Y. Schmidt, E. Shulman, S. Sinha, S. Sammut, C. Caldas, K. Wang, E. Ruppin. <b>"Enhanced prediction of breast cancer patient response to chemotherapy by integrating deconvolved expression patterns of immune, stromal and tumor cells"</b>, Cancer Letters, 2025.  
 </i>
