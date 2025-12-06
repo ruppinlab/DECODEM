@@ -106,7 +106,7 @@ If `svdat = True` in the scripts, the predictions will be saved in [data/TransNE
 - `model_transneo_lirics_cv_vX.py`: performs the cross-validation analysis using TransNEO and extracts the corresponding top predictive CCIs.  
 - `predict_sammut_lirics_validation_vX.py`: trains the CCI-based predictor using TransNEO, validates on ARTemis + PBCP and extracts the corresponding top predictive CCIs.  
 - `predict_brightness_lirics_validation_vX.py`: trains the CCI-based predictor using TransNEO, validates on BrighTNess and extracts the corresponding top predictive CCIs.  
-- `predict_zhang_lirics_sc_validation_cellchat_vX.R`: validates the top predictive CCIs in TNBC (using BrighTNess) extracted by DECODEMi with Zhang et al. SC cohort (CCIs extracted by CellChat v2) and generates Supp. Figs. 4G-H.  
+- `predict_zhang_lirics_sc_validation_cellchat_vX.R`: validates the top predictive CCIs in TNBC (using BrighTNess) extracted by DECODEMi with Zhang et al. SC cohort (CCIs extracted by CellChat v2) and generates Figs. 4G-H.  
 
 If `svdat = True` in the scripts, the predictions will be saved in [data/TransNEO/transneo_analysis/mdl_data](data/TransNEO/transneo_analysis/mdl_data/) (in .pkl format).  
 
