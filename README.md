@@ -118,7 +118,7 @@ The enrichment analyses results and the figures (or panels) in the manuscript ca
 - `enrichment_cd4_cd8_tcells_vX.R`: performs GSVA analysis for CD4<sup>+</sup>/CD8<sup>+</sup> T-cells, estimates their predictive power and generates Supp. Figs. 6G-J.   
 - `get_abundance_response_corr_vX.py`: performs an association analysis between cell type abundance and chemotherapy response, and generates Supp. Fig. 5.  
 
-If `svdat = True` in the scripts, the figure panels will be saved in [data/plots](data/plots/) (in .pdf format).  
+If `svdat = True` in the scripts, the figure panels will be saved in [data/plots](data/plots/) (in .pdf format, DPI = 600).  
 
 
 ## Reproducing the figures  
@@ -130,7 +130,7 @@ Fig. 1D was generated using Biorender ([Dhruba, S. R. (2025)](https://BioRender.
 - `explore_drug_by_icd_vX.py`: generates Supp. Fig. 7. 
 - `make_benchmark_figures_vX.R`: generates Supp. Fig. 1. 
 
-if `svdat = True` in the scripts, the figures will be saved in [data/plots](data/plots/) (in .pdf format).  
+if `svdat = True` in the scripts, the figures will be saved in [data/plots](data/plots/) (in .pdf format, DPI = 600).  
 
 The final figures are provided in [figures](figures/).  
   
