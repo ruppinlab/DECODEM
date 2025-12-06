@@ -134,7 +134,7 @@ The final figures are provided in [figures](figures/).
   
 
 ### How to Cite
-If you use DECODEM or DECODEMi for your research / application, please cite the following paper - 
+If you use DECODEM or DECODEMi in your research / application, please cite the following:  
   > Dhruba, S.R. et al., Enhanced prediction of breast cancer patient response to chemotherapy by integrating deconvolved expression patterns of immune, stromal and tumor cells, Cancer Letters (2025).
   DOI: https://doi.org/10.1016/j.canlet.2025.218101
 
