@@ -61,13 +61,14 @@ GenomicFeatures >= 1.50
 clusterProfiler >= 4.6  
 biomaRt >= 2.54  
 msigdbr >= 7.5  
-GSVA >= 1.45  
+GSVA >= 2.4  
 PRROC >= 1.3  
 rstatix >= 0.7  
 ggpubr >= 0.6 
 seurat >= 5.1.0 
 glue >= 1.6  
 Matrix >= 1.6  
+CellChat >= 2.1  
 ```
 
 
